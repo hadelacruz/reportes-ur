@@ -1,0 +1,39 @@
+<div class="ui form" ref="form">
+    <div class="fields">
+        <div class="six wide field">
+            <label>Sede</label>
+            <div class="ui fluid multiple search selection dropdown" ref="branch_dropdown">
+                <input type="hidden" name="branch">
+                <i class="dropdown icon"></i>
+                <div class="default text">Seleccione Sede</div>
+                <div class="menu"></div>
+            </div>
+        </div>
+        <div class="five wide field">
+            <label>Periodo</label>
+            <div class="ui fluid multiple search selection dropdown" ref="period_dropdown">
+                <input type="hidden" name="period">
+                <i class="dropdown icon"></i>
+                <div class="default text">Seleccione Periodo</div>
+                <div class="menu"></div>
+            </div>
+        </div>
+        <div class="five wide field">
+            <label>Tipo de Curso</label>
+            <div class="ui fluid selection dropdown" ref="course_type_dropdown">
+                <input type="hidden" name="course_type">
+                <i class="dropdown icon"></i>
+                <div class="default text">Seleccione Tipo</div>
+                <div class="menu"></div>
+            </div>
+        </div>
+    </div>
+    <div class="fields">
+        <div class="five wide field">
+            <label>Buscar</label>
+            <div class="ui blue fluid icon labeled button" @click="submit">
+                <i class="check icon"></i> Consultar
+            </div>
+        </div>
+    </div>
+</div>

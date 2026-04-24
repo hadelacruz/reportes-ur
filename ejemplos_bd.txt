@@ -1,0 +1,373 @@
+EJEMPLOS DE BD - modul_dev
+Fecha generacion: 2026-04-23T15:09:26.907Z
+
+================================================================================
+1. STATUS CODES DISPONIBLES EN std_student
+================================================================================
+
+QUERY:
+SELECT status_code, COUNT(*) AS n FROM std_student GROUP BY status_code ORDER BY n DESC;
+
+RESULTADO:
++-------------+-------+
+| status_code | n     |
++-------------+-------+
+| A           | 29612 |
+| S           | 19794 |
+| B           | 2450  |
+| D           | 11    |
++-------------+-------+
+
+Significado:
+  A = Activo
+  S = Suspendido
+  B = De Baja
+  D = Deshabilitado (Fallecido)
+
+================================================================================
+2. ALUMNOS DE BAJA (status_code = B) - 5 ejemplos
+================================================================================
+
+QUERY:
+SELECT student_id, student_id_card, name, status_code, enterprise_id
+FROM std_student
+WHERE status_code = 'B'
+ORDER BY student_id DESC
+LIMIT 5;
+
+RESULTADO:
++------------+-----------------+-------------------------------------------+-------------+---------------+
+| student_id | student_id_card | name                                      | status_code | enterprise_id |
++------------+-----------------+-------------------------------------------+-------------+---------------+
+| 138120     | 2614593         | (De Baja) Ana Lucía Castellanos Aquino    | B           | 1             |
+| 138077     | 26401931        | (De Baja) Melany Graciela Barrios Gamarro | B           | 1             |
+| 138011     | 2610368         | Luis Martin Chajchal Reyes                | B           | 1             |
+| 137950     | 26401922        | (De Baja) Edgar Jeremías Danilo Mac Beb   | B           | 1             |
+| 137846     | 26011757        | (De Baja) Alda Lizbeth Siquivache Alvarez | B           | 1             |
++------------+-----------------+-------------------------------------------+-------------+---------------+
+
+================================================================================
+3. ALUMNOS DESHABILITADOS/FALLECIDOS (status_code = D) - 5 ejemplos
+================================================================================
+
+QUERY:
+SELECT student_id, student_id_card, name, status_code, enterprise_id
+FROM std_student
+WHERE status_code = 'D'
+ORDER BY student_id DESC
+LIMIT 5;
+
+RESULTADO:
++------------+-----------------+---------------------------------------------+-------------+---------------+
+| student_id | student_id_card | name                                        | status_code | enterprise_id |
++------------+-----------------+---------------------------------------------+-------------+---------------+
+| 123263     | 2534152         | (Fallecido) Pablo Ezequiel Pirir Barrios    | D           | 1             |
+| 123072     | 2514443         | (Fallecido) Brandon Ovidio Muñoz Hernández  | D           | 1             |
+| 117785     | 2540621         | (Fallecido) Ervin Geovany Pacay Bol         | D           | 1             |
+| 117479     | 2581148         | (Fallecido) Marlon Orlando Hernandez Rivera | D           | 1             |
+| 113051     | 2409049         | (Fallecido) Josué Natanael Pérez Vásquez    | D           | 1             |
++------------+-----------------+---------------------------------------------+-------------+---------------+
+
+================================================================================
+4. crs_score.setup - CURSO REGULAR (Fase 1 / Fase 2 / Fase Final) - 5 ejemplos
+================================================================================
+
+QUERY:
+SELECT sc.score_id, sc.student_id, sc.section_id, sc.setup
+FROM crs_score sc
+JOIN crs_assignation_section s ON s.section_id = sc.section_id
+JOIN crs_course c ON c.course_id = s.course_id
+WHERE (c.setup NOT LIKE '%"is_practical":true%' OR c.setup IS NULL)
+  AND sc.setup LIKE '%Fase Final%'
+  AND sc.setup NOT LIKE '%Recuperacion%'
+  AND sc.setup NOT LIKE '%"nsp":true%'
+LIMIT 5;
+
+RESULTADO (tabla resumen):
++----------+------------+------------+---------+-----------+---------+-----------+---------+-----------+-------+
+| score_id | student_id | section_id | F1_Zona | F1_Examen | F2_Zona | F2_Examen | FF_Zona | FF_Examen | Total |
++----------+------------+------------+---------+-----------+---------+-----------+---------+-----------+-------+
+| 71       | 99687      | 2653       | 10      | 14        | 10      | 2         | 0       | 31        | 67    |
+| 75       | 100113     | 2653       | 10      | 16        | 10      | 0         | 0       | 29        | 65    |
+| 76       | 102333     | 2653       | 10      | 10        | 10      | 18        | 0       | 38        | 86    |
+| 77       | 102051     | 2653       | 10      | 9         | 10      | 9         | 0       | 38        | 76    |
+| 78       | 102713     | 2653       | 10      | 16        | 10      | 4         | 0       | 22        | 62    |
++----------+------------+------------+---------+-----------+---------+-----------+---------+-----------+-------+
+
+JSON completo del Ejemplo 1 (score_id=71):
+[
+  {
+    "name": "Zona",
+    "score": 10,
+    "stage": "Fase 1",
+    "phase_uuid": "a4189107-4499-4d0a-a287-87a693f55806"
+  },
+  {
+    "name": "Examen",
+    "score": "14",
+    "stage": "Fase 1",
+    "phase_uuid": "a4189107-4499-4d0a-a287-87a693f55806"
+  },
+  {
+    "nsp": false,
+    "name": "NSP",
+    "stage": "Fase 1",
+    "phase_uuid": "a4189107-4499-4d0a-a287-87a693f55806"
+  },
+  {
+    "sde": false,
+    "name": "SDE",
+    "stage": "Fase 1",
+    "phase_uuid": "a4189107-4499-4d0a-a287-87a693f55806"
+  },
+  {
+    "name": "Zona",
+    "score": "10",
+    "stage": "Fase 2",
+    "phase_uuid": "1ed87f40-bed7-489a-a968-034e34b2852c"
+  },
+  {
+    "name": "Examen",
+    "score": "2",
+    "stage": "Fase 2",
+    "phase_uuid": "1ed87f40-bed7-489a-a968-034e34b2852c"
+  },
+  {
+    "nsp": false,
+    "name": "NSP",
+    "stage": "Fase 2",
+    "phase_uuid": "1ed87f40-bed7-489a-a968-034e34b2852c"
+  },
+  {
+    "sde": false,
+    "name": "SDE",
+    "stage": "Fase 2",
+    "phase_uuid": "1ed87f40-bed7-489a-a968-034e34b2852c"
+  },
+  {
+    "name": "Zona",
+    "score": "0",
+    "stage": "Fase Final",
+    "phase_uuid": "285b5b3c-97b5-47a8-8482-7511e55872fb"
+  },
+  {
+    "name": "Examen",
+    "score": "31",
+    "stage": "Fase Final",
+    "phase_uuid": "285b5b3c-97b5-47a8-8482-7511e55872fb"
+  },
+  {
+    "nsp": false,
+    "name": "NSP",
+    "stage": "Fase Final",
+    "phase_uuid": "285b5b3c-97b5-47a8-8482-7511e55872fb"
+  },
+  {
+    "sde": false,
+    "name": "SDE",
+    "stage": "Fase Final",
+    "phase_uuid": "285b5b3c-97b5-47a8-8482-7511e55872fb"
+  }
+]
+
+================================================================================
+5. crs_score.setup - CURSO REGULAR CON RECUPERACION - 5 ejemplos
+================================================================================
+
+QUERY:
+SELECT sc.score_id, sc.student_id, sc.section_id, sc.setup
+FROM crs_score sc
+WHERE sc.setup LIKE '%Recuperacion%'
+LIMIT 5;
+
+RESULTADO (tabla resumen):
++----------+------------+------------+---------+-----------+---------+-----------+---------+-----------+--------+--------+
+| score_id | student_id | section_id | F1_Zona | F1_Examen | F2_Zona | F2_Examen | FF_Zona | FF_Examen | Recup1 | Recup2 |
++----------+------------+------------+---------+-----------+---------+-----------+---------+-----------+--------+--------+
+| 73       | 100287     | 2653       | 10      | 7         | 10      | 0         | 0       | 25        | 34     |        |
+| 74       | 101487     | 2653       | 10      | 12        | 10      | 1         | 0       | 22        | 34     |        |
+| 83       | 101487     | 2654       | 0       | 12        | 10      | 1         | 0       | 30        | 38     |        |
+| 90       | 109140     | 2672       | 0       | 7         | 10      | 14        | 0       | 8         | 0      |        |
+| 93       | 109475     | 2672       | 10      | 5         | 10      | 5         | 0       | 6         | 0      |        |
++----------+------------+------------+---------+-----------+---------+-----------+---------+-----------+--------+--------+
+
+JSON completo del Ejemplo 1 (score_id=73):
+[
+  {
+    "name": "Zona",
+    "score": 10,
+    "stage": "Fase 1",
+    "phase_uuid": "a4189107-4499-4d0a-a287-87a693f55806"
+  },
+  {
+    "name": "Examen",
+    "score": "7",
+    "stage": "Fase 1",
+    "phase_uuid": "a4189107-4499-4d0a-a287-87a693f55806"
+  },
+  {
+    "nsp": false,
+    "name": "NSP",
+    "stage": "Fase 1",
+    "phase_uuid": "a4189107-4499-4d0a-a287-87a693f55806"
+  },
+  {
+    "sde": false,
+    "name": "SDE",
+    "stage": "Fase 1",
+    "phase_uuid": "a4189107-4499-4d0a-a287-87a693f55806"
+  },
+  {
+    "name": "Zona",
+    "score": "10",
+    "stage": "Fase 2",
+    "phase_uuid": "1ed87f40-bed7-489a-a968-034e34b2852c"
+  },
+  {
+    "name": "Examen",
+    "score": "0",
+    "stage": "Fase 2",
+    "phase_uuid": "1ed87f40-bed7-489a-a968-034e34b2852c"
+  },
+  {
+    "nsp": false,
+    "name": "NSP",
+    "stage": "Fase 2",
+    "phase_uuid": "1ed87f40-bed7-489a-a968-034e34b2852c"
+  },
+  {
+    "sde": false,
+    "name": "SDE",
+    "stage": "Fase 2",
+    "phase_uuid": "1ed87f40-bed7-489a-a968-034e34b2852c"
+  },
+  {
+    "name": "Zona",
+    "score": "0",
+    "stage": "Fase Final",
+    "phase_uuid": "285b5b3c-97b5-47a8-8482-7511e55872fb"
+  },
+  {
+    "name": "Examen",
+    "score": "25",
+    "stage": "Fase Final",
+    "phase_uuid": "285b5b3c-97b5-47a8-8482-7511e55872fb"
+  },
+  {
+    "nsp": false,
+    "name": "NSP",
+    "stage": "Fase Final",
+    "phase_uuid": "285b5b3c-97b5-47a8-8482-7511e55872fb"
+  },
+  {
+    "sde": false,
+    "name": "SDE",
+    "stage": "Fase Final",
+    "phase_uuid": "285b5b3c-97b5-47a8-8482-7511e55872fb"
+  },
+  {
+    "name": "Recuperacion1",
+    "score": "34",
+    "stage": "Recuperacion1",
+    "weighting": "40"
+  }
+]
+
+================================================================================
+6. crs_score.setup - CURSO PRACTICO (Seminario/Plan Practico/Desarrollo/Informe Final/Consolidado) - 5 ejemplos
+================================================================================
+
+QUERY:
+SELECT sc.score_id, sc.student_id, sc.section_id, sc.setup
+FROM crs_score sc
+WHERE sc.setup LIKE '%Seminario%'
+  AND sc.setup LIKE '%Consolidado%'
+LIMIT 5;
+
+RESULTADO (tabla resumen):
++----------+------------+------------+-----------+---------------+------------+---------------+-------------+
+| score_id | student_id | section_id | Seminario | Plan_Practico | Desarrollo | Informe_Final | Consolidado |
++----------+------------+------------+-----------+---------------+------------+---------------+-------------+
+| 191886   | 116749     | 17376      | 7         | null          | 50         | null          | 57          |
+| 191887   | 118193     | 17376      | 10        | null          | null       | 30            | 40          |
+| 191888   | 114763     | 17376      | 1         | null          | null       | null          | 1           |
+| 191889   | 115467     | 17376      | 9         | null          | null       | null          | 9           |
+| 191890   | 124026     | 17376      | null      | null          | null       | null          | 0           |
++----------+------------+------------+-----------+---------------+------------+---------------+-------------+
+
+JSON completo del Ejemplo 1 (score_id=191886):
+[
+  {
+    "stage": "Seminario",
+    "name": "Seminario",
+    "score": 7,
+    "weighting": "10"
+  },
+  {
+    "stage": "Plan Práctico",
+    "name": "Plan Práctico",
+    "score": null,
+    "weighting": "10"
+  },
+  {
+    "stage": "Desarrollo",
+    "name": "Desarrollo",
+    "score": 50,
+    "weighting": "50"
+  },
+  {
+    "stage": "Informe Final",
+    "name": "Informe Final",
+    "score": null,
+    "weighting": "30"
+  },
+  {
+    "stage": "Consolidado",
+    "name": "Consolidado",
+    "score": 57
+  }
+]
+
+================================================================================
+7. crs_score.setup - CON NSP=true - 5 ejemplos
+================================================================================
+
+QUERY:
+SELECT sc.score_id, sc.student_id, sc.section_id, sc.setup
+FROM crs_score sc
+WHERE sc.setup LIKE '%"nsp":true%'
+LIMIT 5;
+
+RESULTADO (tabla resumen):
++----------+------------+------------+----------------+------------------+----------+-------------+
+| score_id | student_id | section_id | items_nsp_true | stages_afectados | extransp | total_items |
++----------+------------+------------+----------------+------------------+----------+-------------+
+| 72       | 99885      | 2653       | 1              | Fase 2           | si       | 12          |
+| 79       | 99885      | 2654       | 1              | Fase 2           | si       | 12          |
+| 481      | 102722     | 2676       | 2              | Fase 1+Fase 2    | no       | 12          |
+| 615      | 102722     | 2680       | 1              | Fase 2           | no       | 12          |
+| 728      | 113440     | 4111       | 2              | Fase 1+Fase 2    | no       | 11          |
++----------+------------+------------+----------------+------------------+----------+-------------+
+
+Items con NSP=true del Ejemplo 1 (score_id=72):
+[
+  {
+    "nsp": true,
+    "name": "NSP",
+    "stage": "Fase 2",
+    "extransp": true,
+    "phase_uuid": "1ed87f40-bed7-489a-a968-034e34b2852c"
+  }
+]
+
+================================================================================
+8. PATTERN RESUMEN
+================================================================================
+
+Tipo                    | # items | Clave distintiva
+------------------------|---------|-------------------------------------------
+Regular base            | 12      | 3 stages x (Zona+Examen+NSP+SDE) con phase_uuid
+Regular + Recup1        | 13      | base + {stage:"Recuperacion1"}
+Regular + Recup2        | 14      | base + Recup1 + {stage:"Recuperacion2"}
+Practico                | 5       | 4 stages fijos + {stage:"Consolidado"}, sin phase_uuid
+NSP / SDE               | 12-14   | mismos items pero con nsp:true o sde:true
