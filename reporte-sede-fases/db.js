@@ -23,6 +23,8 @@ async function getCompletionReport() {
         if (req.body.d.branch) inscCondition.branch_id = req.body.d.branch.split(",");
         
         const requestedCourseType = (req.body.d.course_type || "all").toString().toLowerCase();
+        const Op = (models.Sequelize && models.Sequelize.Op) || (models.sequelize && models.sequelize.Op);
+        const useCursorPagination = !!(Op && Op.gt);
 
         // Relaciones basadas en ejemplo2
         models.crs_assignation_preinscription.belongsTo(models.std_student, { foreignKey: "student_id" });
@@ -35,10 +37,12 @@ async function getCompletionReport() {
 
         const BATCH_SIZE = 1000;
         let offset = 0;
+        let lastPreinscriptionId = 0;
         const branchesStats = {};
+        const sectionCache = new Map(); // section_id => { isPractical: boolean|null, baseStages: Set<string> }
 
         while(true) {
-            const preinscriptions = await models.crs_assignation_preinscription.findAll({
+            const preinscriptionQuery = {
                 attributes: ["preinscription_id", "student_id", "taken_by_section_id", "branch_id"],
                 include: [
                     {
@@ -79,16 +83,29 @@ async function getCompletionReport() {
                     }
                 ],
                 limit: BATCH_SIZE,
-                offset: offset,
                 order: [['preinscription_id', 'ASC']]
-            });
+            };
+
+            if (useCursorPagination) {
+                preinscriptionQuery.where = { preinscription_id: { [Op.gt]: lastPreinscriptionId } };
+            } else {
+                preinscriptionQuery.offset = offset;
+            }
+
+            const preinscriptions = await models.crs_assignation_preinscription.findAll(preinscriptionQuery);
 
             if (!preinscriptions || preinscriptions.length === 0) {
                 break;
             }
 
+            if (useCursorPagination) {
+                lastPreinscriptionId = preinscriptions[preinscriptions.length - 1].preinscription_id;
+            }
+
             const studentIds = [...new Set(preinscriptions.map(p => p.student_id))];
             const sectionIds = [...new Set(preinscriptions.map(p => p.taken_by_section_id))];
+            const uncachedSectionIds = sectionIds.filter(id => !sectionCache.has(id));
+            const uncachedSectionsSet = new Set(uncachedSectionIds);
 
             const scores = await models.crs_score.findAll({
                 where: {
@@ -98,22 +115,13 @@ async function getCompletionReport() {
                 attributes: ["student_id", "section_id", "setup"]
             });
 
-            // Descubrimiento estable de fases por sección: no depende de qué alumnos cayeron en este lote.
-            const sectionScores = await models.crs_score.findAll({
-                where: {
-                    section_id: sectionIds
-                },
-                attributes: ["section_id", "setup"]
-            });
+            const scoresMap = new Map();
 
-            const scoresMap = {};
-            const sectionBaseStages = {};
-            const sectionCourseMeta = {};
-
-            // Identificar si la sección pertenece a un curso práctico por setup.is_practical (fuente de verdad)
+            // Identificar tipo de curso y fases base solo para secciones nuevas (cacheable entre lotes)
             preinscriptions.forEach(pre => {
                 const section = pre.crs_assignation_section;
-                if (!section || !section.section_id || sectionCourseMeta[section.section_id]) return;
+                if (!section || !section.section_id || !uncachedSectionsSet.has(section.section_id)) return;
+                if (sectionCache.has(section.section_id)) return;
 
                 const course = section.crs_course;
                 let isPractical = null;
@@ -129,49 +137,53 @@ async function getCompletionReport() {
                     }
                 }
 
-                sectionCourseMeta[section.section_id] = { isPractical: isPractical };
-            });
-
-            // Pre-llenar fases obligatorias SOLO cuando el tipo de curso es confiable (setup.is_practical)
-            sectionIds.forEach(id => {
-                const isPracticalSection = sectionCourseMeta[id] ? sectionCourseMeta[id].isPractical : null;
-                if (isPracticalSection === true) {
-                    sectionBaseStages[id] = new Set(PRACTICAL_BASE_STAGES);
-                } else if (isPracticalSection === false) {
-                    sectionBaseStages[id] = new Set(REGULAR_BASE_STAGES);
-                } else {
-                    // Tipo desconocido: no imponemos fases por defecto para no sesgar denominadores.
-                    sectionBaseStages[id] = new Set();
+                let baseStages = new Set();
+                if (isPractical === true) {
+                    baseStages = new Set(PRACTICAL_BASE_STAGES);
+                } else if (isPractical === false) {
+                    baseStages = new Set(REGULAR_BASE_STAGES);
                 }
+
+                sectionCache.set(section.section_id, { isPractical: isPractical, baseStages: baseStages });
             });
 
             scores.forEach(s => {
-                scoresMap[`${s.student_id}_${s.section_id}`] = s;
+                scoresMap.set(`${s.student_id}_${s.section_id}`, s);
             });
 
-            sectionScores.forEach(s => {
-                // Descubrir fases de esta sección usando todos los scores de la sección
-                let sSetup = [];
-                try { sSetup = typeof s.setup === "string" ? JSON.parse(s.setup) : s.setup; } catch(e){}
-                if (Array.isArray(sSetup)) {
-                    sSetup.forEach(item => {
-                        const normalizedStage = normalizeStageName(item.stage);
-                        if (normalizedStage) {
-                            // Fases condicionales excluidas de la asignación universal
-                            const isConditional = /recuperacion|extraordinario|retrasada|suficiencia/i.test(normalizedStage);
-                            const sectionKind = sectionCourseMeta[s.section_id] ? sectionCourseMeta[s.section_id].isPractical : null;
+            // Descubrimiento estable de fases por sección solo para secciones nuevas
+            if (uncachedSectionIds.length > 0) {
+                const sectionScores = await models.crs_score.findAll({
+                    where: {
+                        section_id: uncachedSectionIds
+                    },
+                    attributes: ["section_id", "setup"]
+                });
 
-                            // Evita mezclar tipos: un curso práctico no debe heredar fases de regular, ni viceversa.
+                sectionScores.forEach(s => {
+                    const sectionMeta = sectionCache.get(s.section_id);
+                    if (!sectionMeta) return;
+
+                    let sSetup = [];
+                    try { sSetup = typeof s.setup === "string" ? JSON.parse(s.setup) : s.setup; } catch(e){}
+                    if (Array.isArray(sSetup)) {
+                        sSetup.forEach(item => {
+                            const normalizedStage = normalizeStageName(item.stage);
+                            if (!normalizedStage) return;
+
+                            const isConditional = /recuperacion|extraordinario|retrasada|suficiencia/i.test(normalizedStage);
+                            const sectionKind = sectionMeta.isPractical;
+
                             if (sectionKind === true && !PRACTICAL_STAGE_SET.has(normalizedStage)) return;
                             if (sectionKind === false && PRACTICAL_STAGE_SET.has(normalizedStage)) return;
 
                             if (!isConditional) {
-                                sectionBaseStages[s.section_id].add(normalizedStage);
+                                sectionMeta.baseStages.add(normalizedStage);
                             }
-                        }
-                    });
-                }
-            });
+                        });
+                    }
+                });
+            }
 
             preinscriptions.forEach(pre => {
                 const section = pre.crs_assignation_section;
@@ -197,7 +209,8 @@ async function getCompletionReport() {
                     };
                 }
 
-                const scoreRecord = scoresMap[`${pre.student_id}_${pre.taken_by_section_id}`];
+                const sectionMeta = sectionCache.get(pre.taken_by_section_id) || { isPractical: null, baseStages: new Set() };
+                const scoreRecord = scoresMap.get(`${pre.student_id}_${pre.taken_by_section_id}`);
                 let scoreSetups = [];
                 
                 if (scoreRecord && scoreRecord.setup) {
@@ -212,9 +225,7 @@ async function getCompletionReport() {
                 let recordedStages = new Set();
 
                 // 1. El estudiante SIEMPRE es esperado en las fases regulares de su curso (asegura cuadrar los totales con ejemplo2)
-                if (sectionBaseStages[pre.taken_by_section_id]) {
-                    sectionBaseStages[pre.taken_by_section_id].forEach(stg => expectedStages.add(stg));
-                }
+                sectionMeta.baseStages.forEach(stg => expectedStages.add(stg));
 
                 // 2. Analizamos el JSON propio del estudiante para agregar fases condicionales y saber si hay nota ingresada
                 let isStudentDropout = false;
@@ -226,15 +237,22 @@ async function getCompletionReport() {
                 }
 
                 if (Array.isArray(scoreSetups)) {
-                    const sectionKind = sectionCourseMeta[pre.taken_by_section_id] ? sectionCourseMeta[pre.taken_by_section_id].isPractical : null;
-                    let allStages = [...new Set(scoreSetups.filter(x => x.stage).map(x => normalizeStageName(x.stage)))];
+                    const sectionKind = sectionMeta.isPractical;
+                    const stageBlocksByStage = new Map();
 
-                    allStages.forEach(stageName => {
+                    scoreSetups.forEach(item => {
+                        const stageName = normalizeStageName(item.stage);
+                        if (!stageName) return;
+                        if (!stageBlocksByStage.has(stageName)) {
+                            stageBlocksByStage.set(stageName, []);
+                        }
+                        stageBlocksByStage.get(stageName).push(item);
+                    });
+
+                    stageBlocksByStage.forEach((stageBlocks, stageName) => {
                         if (!stageName) return;
                         if (sectionKind === true && !PRACTICAL_STAGE_SET.has(stageName)) return;
                         if (sectionKind === false && PRACTICAL_STAGE_SET.has(stageName)) return;
-
-                        const stageBlocks = scoreSetups.filter(x => normalizeStageName(x.stage) === stageName);
                         
                         expectedStages.add(stageName);
 
@@ -243,10 +261,17 @@ async function getCompletionReport() {
                         const isDropoutPhase = isStudentDropout || isDisabledJSON;
 
                         // Verificamos si tiene calificación (emulamos la función faseInfo del ejemplo2)
-                        const zone = stageBlocks.find(x => x.name === "Zona");
-                        const exam = stageBlocks.find(x => x.name === "Examen");
-                        const nsp = stageBlocks.find(x => x.name === "NSP");
-                        const sde = stageBlocks.find(x => x.name === "SDE");
+                        let zone = null;
+                        let exam = null;
+                        let nsp = null;
+                        let sde = null;
+
+                        stageBlocks.forEach(x => {
+                            if (x.name === "Zona") zone = x;
+                            else if (x.name === "Examen") exam = x;
+                            else if (x.name === "NSP") nsp = x;
+                            else if (x.name === "SDE") sde = x;
+                        });
 
                         let hasNote = false;
 
@@ -302,7 +327,9 @@ async function getCompletionReport() {
                 });
             });
             
-            offset += BATCH_SIZE;
+            if (!useCursorPagination) {
+                offset += BATCH_SIZE;
+            }
         }
 
         const finalResult = Object.values(branchesStats).map(branch => {
