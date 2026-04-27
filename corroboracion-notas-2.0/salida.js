@@ -78,78 +78,213 @@
             // });
 
             vm.result = vm.result.map(row => {
-                // 1) parsear el JSON sólo si viene algo; si no, dejamos scores = []
-                let scores = [];
-                if (row.score) {
+                const PRACTICAL_STAGES = ["Seminario", "Plan Práctico", "Desarrollo", "Informe Final", "Consolidado"];
+                const PRACTICAL_SET = new Set(PRACTICAL_STAGES);
+
+                function normalizeStageName(stage) {
+                    if (!stage || typeof stage !== "string") return "";
+                    const clean = stage.trim();
+                    if (/^fase\s*1$/i.test(clean)) return "Fase 1";
+                    if (/^fase\s*2$/i.test(clean)) return "Fase 2";
+                    if (/^fase\s*final$/i.test(clean)) return "Fase Final";
+                    if (/^plan practico$/i.test(clean) || /^plan pr[aá]ctico$/i.test(clean)) return "Plan Práctico";
+                    if (/^recuperaci[oó]n\s*1$/i.test(clean)) return "Recuperacion1";
+                    if (/^recuperaci[oó]n\s*2$/i.test(clean)) return "Recuperacion2";
+                    return clean;
+                }
+
+                function hasNumericScore(value) {
+                    if (value === null || value === undefined) return false;
+                    const str = String(value).trim();
+                    if (str === "") return false;
+                    return !Number.isNaN(Number(str));
+                }
+
+                function parseScoreSetup(setup) {
+                    if (!setup) return [];
                     try {
-                        scores = typeof row.score === "string" ?
-                            JSON.parse(row.score) :
-                            Array.isArray(row.score) ?
-                            row.score : [];
+                        const parsed = typeof setup === "string" ? JSON.parse(setup) : setup;
+                        return Array.isArray(parsed) ? parsed : [];
                     } catch (e) {
-                        scores = [];
+                        return [];
                     }
                 }
 
-                // 2) helper que devuelve { hasNote, nota }
-                function faseInfo(stageName) {
-                    // si no hay ningún registro, devolvemos vacío
-                    if (!Array.isArray(scores) || scores.length === 0) {
+                const scores = parseScoreSetup(row.score);
+                const blocksByStage = new Map();
+                scores.forEach(item => {
+                    const stg = normalizeStageName(item && item.stage);
+                    if (!stg) return;
+                    if (!blocksByStage.has(stg)) {
+                        blocksByStage.set(stg, []);
+                    }
+                    blocksByStage.get(stg).push(item);
+                });
+
+                let isPracticalCourse = row.course_type === "practical";
+                if (row.course_type !== "practical" && row.course_type !== "regular") {
+                    const seenPracticalStage = Array.from(blocksByStage.keys()).some(stg => PRACTICAL_SET.has(stg));
+                    isPracticalCourse = seenPracticalStage;
+                }
+
+                const isDropout = row.student_status_code === "B" || row.student_status_code === "D";
+                const dropoutLabel = row.student_status_code === "B" ? "BAJA" : row.student_status_code === "D" ? "DESHABILITADO" : "";
+
+                function regularStageInfo(stageName) {
+                    if (isPracticalCourse) return {
+                        tiene: "NA",
+                        nota: "",
+                        examen: ""
+                    };
+                    if (isDropout) return {
+                        tiene: "Si",
+                        nota: dropoutLabel,
+                        examen: dropoutLabel
+                    };
+
+                    const stageBlocks = blocksByStage.get(stageName) || [];
+                    const zone = stageBlocks.find(x => x.name === "Zona");
+                    const exam = stageBlocks.find(x => x.name === "Examen");
+                    const nsp = stageBlocks.find(x => x.name === "NSP");
+                    const sde = stageBlocks.find(x => x.name === "SDE");
+
+                    const hasZone = !!(zone && hasNumericScore(zone.score));
+                    const hasExam = !!(exam && hasNumericScore(exam.score));
+                    const hasNSP = !!(nsp && nsp.nsp === true);
+                    const hasSDE = !!(sde && sde.sde === true);
+
+                    const zoneValue = hasZone ? zone.score : "";
+                    const examValue = hasExam ? exam.score : (hasNSP ? "NSP" : (hasSDE ? "SDE" : ""));
+
+                    if (stageName === "Fase Final" && hasSDE) {
                         return {
-                            hasNote: false,
+                            tiene: "Si",
+                            nota: zoneValue,
+                            examen: "SDE"
+                        };
+                    }
+
+                    if (hasZone && hasNSP) {
+                        return {
+                            tiene: "Si",
+                            nota: zoneValue,
+                            examen: "NSP"
+                        };
+                    }
+
+                    if (hasZone && hasExam) {
+                        return {
+                            tiene: "Si",
+                            nota: zoneValue,
+                            examen: examValue
+                        };
+                    }
+
+                    return {
+                        tiene: "No",
+                        nota: zoneValue,
+                        examen: examValue
+                    };
+                }
+
+                function singleNumericStageInfo(stageName, appliesToPractical) {
+                    const applies = appliesToPractical ? isPracticalCourse : !isPracticalCourse;
+                    if (!applies) return {
+                        tiene: "NA",
+                        nota: ""
+                    };
+                    if (isDropout) return {
+                        tiene: "Si",
+                        nota: dropoutLabel
+                    };
+
+                    const stageBlocks = blocksByStage.get(stageName) || [];
+                    const firstNumeric = stageBlocks.find(x => hasNumericScore(x && x.score));
+
+                    if (firstNumeric) {
+                        return {
+                            tiene: "Si",
+                            nota: firstNumeric.score
+                        };
+                    }
+
+                    return {
+                        tiene: "No",
+                        nota: ""
+                    };
+                }
+
+                function recoveryStageInfo(stageName) {
+                    if (isPracticalCourse) return {
+                        tiene: "NA",
+                        nota: ""
+                    };
+
+                    const stageBlocks = blocksByStage.get(stageName) || [];
+                    const isAssignedToRecovery = stageBlocks.length > 0;
+
+                    if (!isAssignedToRecovery) {
+                        return {
+                            tiene: "NA",
                             nota: ""
                         };
                     }
-                    const s = scores.filter(x => x.stage === stageName);
-                    const zone = s.find(x => x.name === "Zona");
-                    const exam = s.find(x => x.name === "Examen");
-                    const nsp = s.find(x => x.name === "NSP");
-                    const sde = s.find(x => x.name === "SDE");
 
-                    const hasNSP = !!(nsp && nsp.nsp === true);
-                    const hasSDE = !!(sde && sde.sde === true);
-                    const hasZone = !!(zone && zone.score != null && zone.score !== "");
-                    const hasExam = !!(exam && exam.score != null && exam.score !== "");
+                    const firstNumeric = stageBlocks.find(x => hasNumericScore(x && x.score));
 
-                    let info = {
-                        hasNote: false,
-                        nota: "0"
-                    };
-
-                    if (hasNSP && hasZone) {
-                        info.hasNote = true;
-                        info.nota = "NSP";
-                    } else if (!hasNSP && hasZone && hasExam) {
-                        info.hasNote = true;
-                        info.nota = Number(zone.score) + Number(exam.score);
-                    } else if (!hasZone && hasNSP) {
-                        info.hasNote = false;
-                        info.nota = "NSP";
-                    } else if (hasZone || hasExam) {
-                        info.hasNote = true;
-                        info.nota = (hasZone ? Number(zone.score) : 0) +
-                            (hasExam ? Number(exam.score) : 0);
-                    } else if (hasSDE && !hasZone && !hasExam) {
-                        info.hasNote = true;
-                        info.nota = "SDE";
+                    if (firstNumeric) {
+                        return {
+                            tiene: "Si",
+                            nota: firstNumeric.score
+                        };
                     }
 
-                    return info;
+                    return {
+                        tiene: "No",
+                        nota: ""
+                    };
                 }
 
-                // 3) obtenemos la info de cada fase
-                const f1 = faseInfo("Fase 1");
-                const f2 = faseInfo("Fase 2");
-                const fF = faseInfo("Fase Final");
+                const f1 = regularStageInfo("Fase 1");
+                const f2 = regularStageInfo("Fase 2");
+                const fF = regularStageInfo("Fase Final");
+                const r1 = recoveryStageInfo("Recuperacion1");
+                const r2 = recoveryStageInfo("Recuperacion2");
 
-                // 4) devolvemos row enriquecido
+                const sem = singleNumericStageInfo("Seminario", true);
+                const plan = singleNumericStageInfo("Plan Práctico", true);
+                const des = singleNumericStageInfo("Desarrollo", true);
+                const inf = singleNumericStageInfo("Informe Final", true);
+                const con = singleNumericStageInfo("Consolidado", true);
+
                 return Object.assign(row, {
-                    fase1_tiene: f1.hasNote ? "Si" : "No",
+                    course_type_label: isPracticalCourse ? "Práctico" : "Regular",
+
+                    fase1_tiene: f1.tiene,
                     fase1_nota: f1.nota,
-                    fase2_tiene: f2.hasNote ? "Si" : "No",
+                    fase1_examen: f1.examen,
+                    fase2_tiene: f2.tiene,
                     fase2_nota: f2.nota,
-                    faseFinal_tiene: fF.hasNote ? "Si" : "No",
+                    fase2_examen: f2.examen,
+                    faseFinal_tiene: fF.tiene,
                     faseFinal_nota: fF.nota,
+                    faseFinal_examen: fF.examen,
+
+                    recuperacion1_tiene: r1.tiene,
+                    recuperacion1_nota: r1.nota,
+                    recuperacion2_tiene: r2.tiene,
+                    recuperacion2_nota: r2.nota,
+
+                    seminario_tiene: sem.tiene,
+                    seminario_nota: sem.nota,
+                    planPractico_tiene: plan.tiene,
+                    planPractico_nota: plan.nota,
+                    desarrollo_tiene: des.tiene,
+                    desarrollo_nota: des.nota,
+                    informeFinal_tiene: inf.tiene,
+                    informeFinal_nota: inf.nota,
+                    consolidado_tiene: con.tiene,
+                    consolidado_nota: con.nota,
                 });
             });
             console.log("res2", vm.result);
@@ -254,12 +389,22 @@
                     },
                 },
                 {
+                    //tipo de curso
+                    data: function(row) {
+                        return row.course_type_label;
+                    },
+                },
+                {
                     // "Fase 1: Tiene notas?"
                     data: "fase1_tiene"
                 },
                 {
                     // "Fase 1: Nota"
                     data: "fase1_nota"
+                },
+                {
+                    // "Fase 1: Examen"
+                    data: "fase1_examen"
                 },
                 {
                     // "Fase 2: Tiene notas?"
@@ -270,12 +415,76 @@
                     data: "fase2_nota"
                 },
                 {
+                    // "Fase 2: Examen"
+                    data: "fase2_examen"
+                },
+                {
                     // "Fase Final: Tiene notas?"
                     data: "faseFinal_tiene"
                 },
                 {
                     // "Fase Final: Nota"
                     data: "faseFinal_nota"
+                },
+                {
+                    // "Fase Final: Examen"
+                    data: "faseFinal_examen"
+                },
+                {
+                    // "Recuperacion1: Tiene notas?"
+                    data: "recuperacion1_tiene"
+                },
+                {
+                    // "Recuperacion1: Nota"
+                    data: "recuperacion1_nota"
+                },
+                {
+                    // "Recuperacion2: Tiene notas?"
+                    data: "recuperacion2_tiene"
+                },
+                {
+                    // "Recuperacion2: Nota"
+                    data: "recuperacion2_nota"
+                },
+                {
+                    // "Seminario: Tiene notas?"
+                    data: "seminario_tiene"
+                },
+                {
+                    // "Seminario: Nota"
+                    data: "seminario_nota"
+                },
+                {
+                    // "Plan Practico: Tiene notas?"
+                    data: "planPractico_tiene"
+                },
+                {
+                    // "Plan Practico: Nota"
+                    data: "planPractico_nota"
+                },
+                {
+                    // "Desarrollo: Tiene notas?"
+                    data: "desarrollo_tiene"
+                },
+                {
+                    // "Desarrollo: Nota"
+                    data: "desarrollo_nota"
+                },
+                {
+                    // "Informe Final: Tiene notas?"
+                    data: "informeFinal_tiene"
+                },
+                {
+                    // "Informe Final: Nota"
+                    data: "informeFinal_nota"
+                },
+                {
+                    // "Consolidado: Tiene notas?"
+                    data: "consolidado_tiene"
+                },
+                {
+                    // "Consolidado: Nota"
+                    data: "consolidado_nota"
                 }
             ]
 
