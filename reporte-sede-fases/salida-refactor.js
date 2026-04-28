@@ -13,11 +13,42 @@
     methods: {
         buildTable: function(dataArray) {
             let vm = this;
-            if (!dataArray || !Array.isArray(dataArray) || dataArray.length === 0) {
+
+            function renderEmptyTable() {
                 if (window.jQuery.fn.DataTable.isDataTable(vm.$refs.notes_table)) {
                     window.jQuery(vm.$refs.notes_table).DataTable().destroy();
                 }
+
                 window.jQuery(vm.$refs.notes_table).empty();
+                window.jQuery(vm.$refs.notes_table).append(
+                    '<thead class="ui inverted grey table">' +
+                    '<tr>' +
+                    '<th class="text-center" style="text-align:center !important; vertical-align:middle !important;">SEDE</th>' +
+                    '<th class="text-center" style="text-align:center !important; vertical-align:middle !important;">PERIODO</th>' +
+                    '</tr>' +
+                    '</thead><tbody></tbody>'
+                );
+
+                window.jQuery(vm.$refs.notes_table).DataTable({
+                    data: [],
+                    columns: [
+                        { data: "Sede", defaultContent: "" },
+                        { data: "Periodo", defaultContent: "" }
+                    ],
+                    columnDefs: [{ targets: "_all", className: "text-center" }],
+                    language: {
+                        url: "//cdn.datatables.net/plug-ins/1.10.21/i18n/Spanish.json"
+                    },
+                    paging: true,
+                    searching: true,
+                    ordering: true,
+                    dom: "Bfrtip",
+                    buttons: ["copy", "csv", "excel", "pdf", "print"]
+                });
+            }
+
+            if (!dataArray || !Array.isArray(dataArray) || dataArray.length === 0) {
+                renderEmptyTable();
                 vm.loading = false;
                 return;
             }
@@ -237,6 +268,12 @@
                 return row;
             });
 
+            if (finalRows.length === 0) {
+                renderEmptyTable();
+                vm.loading = false;
+                return;
+            }
+
             const allKeys = new Set();
             finalRows.forEach(row => Object.keys(row).forEach(key => allKeys.add(key)));
             const metaKeys = META_COLUMNS.filter(key => allKeys.has(key));
@@ -303,8 +340,13 @@
     },
     mounted: function() {
         window.jQuery(".ui.tabular.menu .item").tab();
-        if (this.result && this.result.length > 0) {
+
+        // Build table on mount even for empty results to avoid infinite loader.
+        if (Array.isArray(this.result)) {
             this.buildTable(this.result);
+            return;
         }
+
+        this.buildTable([]);
     }
 }
