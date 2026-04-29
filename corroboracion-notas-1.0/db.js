@@ -52,21 +52,15 @@
       models.crs_assignation_section.belongsTo(models.crs_assignation_season, { foreignKey: "season_id" });
 
       models.crs_assignation_season.belongsTo(models.std_period, { foreignKey: "period_id" });
-      models.crs_assignation_classroom.belongsTo(models.std_branch, { foreignKey: "branch_id" });
 
       const classroomInclude = {
         model: models.crs_assignation_classroom,
-        attributes: ["name", "branch_id"],
-        required: !!(clsrmName && clsrmName.trim() !== ""),
-        include: [
-          { model: models.std_branch, attributes: ["name"], required: false }
-        ]
+        attributes: ["name"],
+        required: !!(clsrmName && clsrmName.trim() !== "")
       };
       if (clsrmName && clsrmName.trim() !== "") {
         classroomInclude.where = { name: { [Op.like]: "%" + clsrmName + "%" } };
       }
-
-      const result = [];
 
       const preinscriptions = await models.crs_assignation_preinscription.findAll({
         where: wherePre,
@@ -84,7 +78,7 @@
         include: [
           {
             model: models.std_student,
-            attributes: ["name", "student_id_card", "status_code"],
+            attributes: ["name", "student_id_card"],
             required: false
           },
           { model: models.std_branch, attributes: ["name"], required: false },
@@ -97,7 +91,7 @@
             required: true,
             where: whereSection,
             include: [
-              { model: models.crs_course, attributes: ["name", "setup"], required: false },
+              { model: models.crs_course, attributes: ["name"], required: false },
               { model: models.pfs_professor, attributes: ["setup", "professor_id"], required: false },
               {
                 model: models.crs_assignation_season,
@@ -114,83 +108,61 @@
         ]
       });
 
-      if (preinscriptions && preinscriptions.length > 0) {
-        const sectionIds = [...new Set(preinscriptions.map(p => p.taken_by_section_id).filter(Boolean))];
-        const studentIds = [...new Set(preinscriptions.map(p => p.student_id).filter(Boolean))];
+      const sectionIds = [...new Set(preinscriptions.map(p => p.taken_by_section_id).filter(Boolean))];
+      const studentIds = [...new Set(preinscriptions.map(p => p.student_id).filter(Boolean))];
 
-        const scores = sectionIds.length && studentIds.length
-          ? await models.crs_score.findAll({
-              where: {
-                section_id: { [Op.in]: sectionIds },
-                student_id: { [Op.in]: studentIds }
-              },
-              attributes: ["section_id", "setup", "student_id"]
-            })
-          : [];
+      const scores = sectionIds.length && studentIds.length
+        ? await models.crs_score.findAll({
+            where: {
+              section_id: { [Op.in]: sectionIds },
+              student_id: { [Op.in]: studentIds }
+            },
+            attributes: ["section_id", "setup", "student_id"]
+          })
+        : [];
 
-        const scoreMap = new Map();
-        scores.forEach(s => {
-          scoreMap.set(s.section_id + "-" + s.student_id, s);
-        });
+      const scoreMap = new Map();
+      scores.forEach(s => {
+        scoreMap.set(s.section_id + "-" + s.student_id, s);
+      });
 
-        preinscriptions.forEach(pre => {
-          const section = pre.crs_assignation_section;
-          const student = pre.std_student;
-          const course = section && section.crs_course;
-          const score = section
-            ? scoreMap.get(section.section_id + "-" + pre.student_id)
-            : null;
-          const classroom = section && section.crs_assignation_classroom;
+      const result = preinscriptions.map(pre => {
+        const section = pre.crs_assignation_section;
+        const student = pre.std_student;
+        const score = section
+          ? scoreMap.get(section.section_id + "-" + pre.student_id)
+          : null;
 
-          let professorSetup = null;
-          if (section && section.pfs_professor && section.pfs_professor.setup) {
-            try {
-              professorSetup = JSON.parse(section.pfs_professor.setup);
-            } catch (e) { professorSetup = null; }
-          }
+        let professorSetup = null;
+        if (section && section.pfs_professor && section.pfs_professor.setup) {
+          try {
+            professorSetup = JSON.parse(section.pfs_professor.setup);
+          } catch (e) { professorSetup = null; }
+        }
 
-          const sectionSeason = section && section.crs_assignation_season;
-          const sectionPeriod = sectionSeason && sectionSeason.std_period;
-          let courseSetup = null;
-          if (course && course.setup) {
-            try {
-              courseSetup = typeof course.setup === "string" ? JSON.parse(course.setup) : course.setup;
-            } catch (e) {
-              courseSetup = null;
-            }
-          }
-          const isPractical = !!(courseSetup && courseSetup.is_practical === true);
+        const sectionSeason = section && section.crs_assignation_season;
+        const sectionPeriod = sectionSeason && sectionSeason.std_period;
 
-          // Resolver sede: prioridad a classroom.branch_id (intersede), fallback a preinscription.branch_id
-          const branchId = classroom && classroom.branch_id ? classroom.branch_id : pre.branch_id;
-          const branchName = (classroom && classroom.std_branch && classroom.std_branch.name) 
-            || (pre.std_branch && pre.std_branch.name) 
-            || "No definida";
-
-          result.push({
-            preinscription_id: pre.preinscription_id,
-            student_id: pre.student_id,
-            student_name: (student && student.name) || "Sin nombre",
-            student_id_card: (student && student.student_id_card) || "Sin carné",
-            student_status_code: (student && student.status_code) || null,
-            professor: professorSetup
-              ? ((professorSetup.name || "") + " " + (professorSetup.lastname || "")).trim()
-              : "No tiene.",
-            course: (course && course.name) || "Sin curso",
-            course_setup: courseSetup,
-            course_type: isPractical ? "practical" : "regular",
-            section: (section && section.name) || "Sin sección",
-            classroom: (classroom && classroom.name) || "Sin aula",
-            score: (score && score.setup) || null,
-            branch_id: branchId,
-            branch: branchName,
-            career: (pre.std_career && pre.std_career.name) || null,
-            studying_cycle: (pre.std_studying_cycle && pre.std_studying_cycle.name) || null,
-            studying_time: (pre.std_studying_time && pre.std_studying_time.name) || null,
-            period: (sectionPeriod && sectionPeriod.name) || null
-          });
-        });
-      }
+        return {
+          preinscription_id: pre.preinscription_id,
+          student_id: pre.student_id,
+          student_name: (student && student.name) || "Sin nombre",
+          student_id_card: (student && student.student_id_card) || "Sin carné",
+          professor: professorSetup
+            ? ((professorSetup.name || "") + " " + (professorSetup.lastname || "")).trim()
+            : "No tiene.",
+          course: (section && section.crs_course && section.crs_course.name) || "Sin curso",
+          section: (section && section.name) || "Sin sección",
+          classroom: (section && section.crs_assignation_classroom && section.crs_assignation_classroom.name) ||
+  "Sin aula",
+          score: (score && score.setup) || null,
+          branch: (pre.std_branch && pre.std_branch.name) || "No definida",
+          career: (pre.std_career && pre.std_career.name) || null,
+          studying_cycle: (pre.std_studying_cycle && pre.std_studying_cycle.name) || null,
+          studying_time: (pre.std_studying_time && pre.std_studying_time.name) || null,
+          period: (sectionPeriod && sectionPeriod.name) || null
+        };
+      });
 
       resolve(result);
     } catch (error) {
