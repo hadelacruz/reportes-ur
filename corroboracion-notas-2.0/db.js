@@ -9,12 +9,15 @@
       const wherePre = {};
       const whereSection = {};
       const whereSectionSeason = {};
+      const classroomWhere = {};
+      let classroomRequired = !!(clsrmName && clsrmName.trim() !== "");
 
       if (d.studnt && d.studnt.student_id) {
         wherePre.student_id = d.studnt.student_id;
       }
       if (d.branch) {
-        wherePre.branch_id = { [Op.in]: d.branch.split(",") };
+        classroomWhere.branch_id = { [Op.in]: d.branch.split(",") };
+        classroomRequired = true;
       }
       if (d.studying_time) {
         wherePre.studying_time_id = { [Op.in]: d.studying_time.split(",") };
@@ -57,13 +60,16 @@
       const classroomInclude = {
         model: models.crs_assignation_classroom,
         attributes: ["name", "branch_id"],
-        required: !!(clsrmName && clsrmName.trim() !== ""),
+        required: classroomRequired,
         include: [
           { model: models.std_branch, attributes: ["name"], required: false }
         ]
       };
       if (clsrmName && clsrmName.trim() !== "") {
-        classroomInclude.where = { name: { [Op.like]: "%" + clsrmName + "%" } };
+        classroomWhere.name = { [Op.like]: "%" + clsrmName + "%" };
+      }
+      if (Object.keys(classroomWhere).length > 0) {
+        classroomInclude.where = classroomWhere;
       }
 
       const result = [];

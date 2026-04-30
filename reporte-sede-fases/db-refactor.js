@@ -9,9 +9,12 @@
     const wherePre = {};
     const whereSection = {};
     const whereSectionSeason = {};
+    const classroomWhere = {};
+    let classroomRequired = !!(clsrmName && clsrmName.trim() !== "");
 
     if (d.branch) {
-      wherePre.branch_id = { [Op.in]: d.branch.split(",") };
+      classroomWhere.branch_id = { [Op.in]: d.branch.split(",") };
+      classroomRequired = true;
     }
     if (d.period) {
       whereSectionSeason.period_id = { [Op.in]: d.period.split(",") };
@@ -37,14 +40,17 @@
     const classroomInclude = {
       model: models.crs_assignation_classroom,
       attributes: ["name", "branch_id"],
-      required: !!(clsrmName && clsrmName.trim() !== ""),
+      required: classroomRequired,
       include: [
         { model: models.std_branch, attributes: ["name"], required: false }
       ]
     };
 
     if (clsrmName && clsrmName.trim() !== "") {
-      classroomInclude.where = { name: { [Op.like]: "%" + clsrmName + "%" } };
+      classroomWhere.name = { [Op.like]: "%" + clsrmName + "%" };
+    }
+    if (Object.keys(classroomWhere).length > 0) {
+      classroomInclude.where = classroomWhere;
     }
 
     // Single efficient query without problematic pagination
