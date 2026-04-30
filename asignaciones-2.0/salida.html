@@ -1,0 +1,92 @@
+<div class="ui segment">
+    <div v-if="loading" class="ui active inverted dimmer">
+        <div class="ui large text loader">Cargando...</div>
+    </div>
+    <div class="ui top attached tabular menu">
+        <a class="item active" data-tab="first">Asignaciones</a>
+        <a class="item" data-tab="second">Resumen</a>
+        <a class="item" data-tab="third"></a>
+        <a class="item" data-tab="fourth"></a>
+    </div>
+    <div class="ui bottom attached tab segment active" data-tab="first" style="overflow-x: auto;">
+        <table class="ui very compact selectable celled striped table" ref="asignation_table" style="width:100%">
+            <thead class="ui inverted grey table">
+                <tr>
+                    <th>Sede</th>
+                    <th>Nombre del Aula</th>
+                    <th>Cantidad Alumnos</th>
+                    <th>Carrera</th>
+                    <th>Curso</th>
+                    <th>codigo Catedratico</th>
+                    <th>Nombre Catedratico</th>
+                    <th>Ciclo de estudio</th>
+                    <th> Horario </th>
+                    <th> Día </th>
+                    <th>Periodo/Temporada</th>
+                    <th>Codigo de Clase</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    <div class="ui bottom attached tab segment" data-tab="second">
+        <table class="ui very compact selectable celled striped table" ref="resumen_table" style="width:100%">
+            <thead class="ui inverted blue table">
+                <tr>
+                    <th>Sede</th>
+                    <th>Asignados</th>
+                    <th>No Asignados</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+<div class="ui modal" ref="detail_modal">
+    <div class="basic header">Detalles de {{ selected_professor.name }} {{ selected_professor.lastname }}</div>
+    <div class="scrolling content">
+        <div class="ui icon message" v-if="!sections.length">
+            <i class="info icon"></i>
+            <div class="content">
+                <div class="header">
+                    Aún no hay secciones asignadas
+                </div>
+            </div>
+        </div>
+        <div class="ui grid" v-else>
+            <div class="five wide column">
+                <div class="ui top attached tabular vertical menu" ref="tabss">
+                    <a class="item" :data-tab="'d_'+ridx" v-for="(rcd, ridx) in sections" :key="ridx">{{rcd.crs_course.name}} - {{ rcd.name }} ({{ rcd.crs_assignation_preinscriptions.length }})</a>
+                </div>
+            </div>
+            <div class="eleven wide column">
+                <div class="ui bottom attached tab segment" :data-tab="'d_'+ridx" v-for="(rcd, ridx) in sections" :key="ridx">
+                    <table class="ui compact celled striped table" :ref="'students_table_' + ridx">
+                        <thead>
+                            <tr>
+                                <th>Sede</th>
+                                <th>Carrera</th>
+                                <th>Carné</th>
+                                <th>Nombre</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(itm, iidx) in rcd.crs_assignation_preinscriptions" :key="iidx">
+                                <td>{{ branch }}</td>
+                                <td>{{ itm.std_career.name }}</td>
+                                <td>{{ itm.std_student.student_id_card }}</td>
+                                <td>{{ itm.std_student.name }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="basic actions">
+        <div class="ui positive button">OK</div>
+    </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.2.1/exceljs.min.js"></script>
