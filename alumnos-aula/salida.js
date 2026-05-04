@@ -1,63 +1,74 @@
 ({
 	data: function() {
 		return {
-			result: [],
+			result: {
+				details: [],
+				summary: []
+			},
 			loading: true,
 		}
 	},
 	watch: {
 		result: function(newVal) {
-			this.buildTable(newVal);
+			this.buildTables(newVal);
 		}
 	},
 	methods: {
-		buildTable: function(dataArray) {
-			let vm = this;
+			buildDataTable: function(tableRef, dataArray, columns) {
+				if (window.jQuery.fn.DataTable.isDataTable(tableRef)) {
+					window.jQuery(tableRef).DataTable().destroy();
+				}
 
-			if (window.jQuery.fn.DataTable.isDataTable(vm.$refs.notes_table)) {
-				window.jQuery(vm.$refs.notes_table).DataTable().destroy();
-			}
+				window.jQuery(tableRef).empty();
+				window.jQuery(tableRef).append("<thead class=\"ui inverted grey table\"><tr>" + columns.map(column => `<th>${column.title}</th>`).join("") + "</tr></thead><tbody></tbody>");
 
-			window.jQuery(vm.$refs.notes_table).empty();
-			window.jQuery(vm.$refs.notes_table).append(
-				'<thead class="ui inverted grey table">' +
-				'<tr>' +
-				'<th>Sede</th>' +
-				'<th>Aula</th>' +
-				'<th>Curso</th>' +
-				'<th>Periodo</th>' +
-				'<th>Total alumnos</th>' +
-				'</tr>' +
-				'</thead><tbody></tbody>'
-			);
+				window.jQuery(tableRef).DataTable({
+					data: Array.isArray(dataArray) ? dataArray : [],
+					columns: columns,
+					columnDefs: [{ targets: "_all", className: "text-center" }],
+					language: {
+						url: "//cdn.datatables.net/plug-ins/1.10.21/i18n/Spanish.json"
+					},
+					paging: true,
+					searching: true,
+					ordering: true,
+					dom: "Bfrtip",
+					buttons: ["copy", "csv", "excel", "pdf", "print"]
+				});
+			},
+			buildTables: function(data) {
+				let vm = this;
+				const payload = data && typeof data === "object" && !Array.isArray(data) ? data : { details: Array.isArray(data) ? data : [], summary: Array.isArray(data) ? data : [] };
+				const details = Array.isArray(payload.details) ? payload.details : [];
+				const summary = Array.isArray(payload.summary) ? payload.summary : [];
 
-			window.jQuery(vm.$refs.notes_table).DataTable({
-				data: Array.isArray(dataArray) ? dataArray : [],
-				columns: [
-					{ data: "Sede", defaultContent: "" },
-					{ data: "Aula", defaultContent: "" },
-					{ data: "Curso", defaultContent: "" },
-					{ data: "Periodo", defaultContent: "" },
-					{ data: "Total alumnos", defaultContent: 0 }
-				],
-				columnDefs: [{ targets: "_all", className: "text-center" }],
-				language: {
-					url: "//cdn.datatables.net/plug-ins/1.10.21/i18n/Spanish.json"
-				},
-				paging: true,
-				searching: true,
-				ordering: true,
-				dom: "Bfrtip",
-				buttons: ["copy", "csv", "excel", "pdf", "print"]
-			});
+				vm.buildDataTable(vm.$refs.detail_table, details, [
+					{ title: "Sede", data: "Sede", defaultContent: "" },
+					{ title: "Nombre del alumno", data: "Nombre del alumno", defaultContent: "" },
+					{ title: "Carné", data: "Carné", defaultContent: "" },
+					{ title: "Aula", data: "Aula", defaultContent: "" },
+					{ title: "Curso", data: "Curso", defaultContent: "" },
+					{ title: "Carrera", data: "Carrera", defaultContent: "" },
+					{ title: "Ciclo de estudio", data: "Ciclo de estudio", defaultContent: "" },
+					{ title: "Jornada", data: "Jornada", defaultContent: "" },
+					{ title: "Periodo", data: "Periodo", defaultContent: "" }
+				]);
 
-			vm.loading = false;
+				vm.buildDataTable(vm.$refs.summary_table, summary, [
+					{ title: "Sede", data: "Sede", defaultContent: "" },
+					{ title: "Aula", data: "Aula", defaultContent: "" },
+					{ title: "Curso", data: "Curso", defaultContent: "" },
+					{ title: "Periodo", data: "Periodo", defaultContent: "" },
+					{ title: "Total alumnos", data: "Total alumnos", defaultContent: 0 }
+				]);
+
+				vm.loading = false;
 		}
 	},
 	mounted: function() {
 		window.jQuery(".ui.tabular.menu .item").tab();
-		if (this.result && this.result.length >= 0) {
-			this.buildTable(this.result);
+		if (this.result) {
+			this.buildTables(this.result);
 		}
 	}
 })
