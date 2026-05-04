@@ -24,8 +24,9 @@
 				'<tr>' +
 				'<th>Sede</th>' +
 				'<th>Aula</th>' +
-				'<th>Total alumnos</th>' +
+				'<th>Curso</th>' +
 				'<th>Periodo</th>' +
+				'<th>Total alumnos</th>' +
 				'</tr>' +
 				'</thead><tbody></tbody>'
 			);
@@ -35,8 +36,9 @@
 				columns: [
 					{ data: "Sede", defaultContent: "" },
 					{ data: "Aula", defaultContent: "" },
-					{ data: "Total alumnos", defaultContent: 0 },
-					{ data: "Periodo", defaultContent: "" }
+					{ data: "Curso", defaultContent: "" },
+					{ data: "Periodo", defaultContent: "" },
+					{ data: "Total alumnos", defaultContent: 0 }
 				],
 				columnDefs: [{ targets: "_all", className: "text-center" }],
 				language: {

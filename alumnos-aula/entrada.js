@@ -4,7 +4,8 @@
 			api_url: "https://api_modul.uregional.net",
 			user_branch: undefined,
 			branch: undefined,
-			period: undefined
+			period: undefined,
+			clsrmName: ""
 		}
 	},
 methods: {},
