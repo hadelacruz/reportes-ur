@@ -5,6 +5,7 @@
 		const d = req.body.d || {};
 		const clsrmName = (d.clsrmName || "").trim();
 
+		const wherePre = {};
 		const whereSection = {};
 		const whereSectionSeason = {};
 		const classroomWhere = {};
@@ -21,6 +22,10 @@
 
 		if (d.period) {
 			whereSectionSeason.period_id = { [Op.in]: d.period.split(",") };
+		}
+
+		if (d.studying_time) {
+			wherePre.studying_time_id = { [Op.in]: d.studying_time.split(",") };
 		}
 
 		models.crs_assignation_preinscription.belongsTo(models.crs_assignation_section, {
@@ -76,7 +81,7 @@
 					]
 				}
 			],
-			where: {}
+			where: wherePre
 		});
 
 		const details = [];

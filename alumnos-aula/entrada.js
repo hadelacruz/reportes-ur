@@ -5,6 +5,7 @@
 			user_branch: undefined,
 			branch: undefined,
 			period: undefined,
+			studying_time: undefined,
 			clsrmName: ""
 		}
 	},
@@ -64,6 +65,11 @@ methods: {},
 						name: b.name
 					})) : [];
 
+					let studyingTimes = rsp.data.std_studying_times ? rsp.data.std_studying_times.map(b => ({
+						value: b.studying_time_id,
+						name: b.name
+					})) : [];
+
 					window.jQuery(_v.$refs.branch_dropdown).dropdown({
 						onChange: function(value) {
 							_v.branch = value;
@@ -86,6 +92,14 @@ methods: {},
 						}
 					}).dropdown("setup menu", {
 						values: periods
+					});
+
+					window.jQuery(_v.$refs.studying_time_dropdown).dropdown({
+						onChange: function(value) {
+							_v.studying_time = value;
+						}
+					}).dropdown("setup menu", {
+						values: studyingTimes
 					});
 				}
 			} else {
