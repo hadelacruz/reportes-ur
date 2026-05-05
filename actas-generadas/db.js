@@ -59,7 +59,7 @@ models.crs_score.findAll({
       model: models.crs_assignation_section,
       required: true,
       where: sectionWhere,
-      attributes: ["section_id", "name", "course_id", "season_id", "branch_id", "studying_cycle_id", "classroom_id", "professor_id", "career_id"],
+      attributes: ["section_id", "name", "course_id", "season_id", "branch_id", "studying_cycle_id", "classroom_id", "professor_id", "studying_time_id", "career_id"],
       include: [
         { 
           model: models.std_studying_cycle, 
