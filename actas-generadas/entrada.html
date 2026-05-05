@@ -1,0 +1,102 @@
+<form class="ui form">
+    <div class="two fields">
+      <div class="field">
+        <label>Período</label>
+        <div class="ui multiple search selection dropdown" ref="season_dropdown">
+          <input type="hidden" name="season_id" />
+          <i class="dropdown icon"></i>
+          <div class="default text">Todos los períodos</div>
+          <div class="menu"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Sede</label>
+        <div class="ui multiple search selection dropdown" ref="branch_dropdown">
+          <input type="hidden" name="branch_id" />
+          <i class="dropdown icon"></i>
+          <div class="default text">Todas las sedes</div>
+          <div class="menu"></div>
+        </div>
+      </div>
+    </div>
+    <div class="two fields">
+      <div class="field">
+        <label>Carrera</label>
+        <div class="ui multiple search selection dropdown" ref="career_dropdown">
+          <input type="hidden" name="career_id" />
+          <i class="dropdown icon"></i>
+          <div class="default text">Todas las carreras</div>
+          <div class="menu"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Ciclo de Estudio</label>
+        <div class="ui multiple search selection dropdown" ref="cycle_dropdown">
+          <input type="hidden" name="studying_cycle_id" />
+          <i class="dropdown icon"></i>
+          <div class="default text">Todos los ciclos</div>
+          <div class="menu"></div>
+        </div>
+      </div>
+    </div>
+    <div class="two fields">
+      <div class="field">
+        <label>Jornada de Estudio</label>
+        <div class="ui multiple search selection dropdown" ref="time_dropdown">
+          <input type="hidden" name="studying_time_id" />
+          <i class="dropdown icon"></i>
+          <div class="default text">Todas las jornadas</div>
+          <div class="menu"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Catedrático</label>
+        <div class="ui multiple search selection dropdown" ref="professor_dropdown">
+          <input type="hidden" name="professor_id" />
+          <i class="dropdown icon"></i>
+          <div class="default text">Todos los catedráticos</div>
+          <div class="menu"></div>
+        </div>
+      </div>
+    </div>
+    <div class="two fields">
+      <div class="field">
+        <label>Tipo de Acta</label>
+        <div class="ui multiple search selection dropdown" ref="type_dropdown">
+          <input type="hidden" name="record_type" />
+          <i class="dropdown icon"></i>
+          <div class="default text">Todos los tipos</div>
+          <div class="menu"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Estado de Nota</label>
+        <div class="ui selection dropdown" ref="status_dropdown">
+          <input type="hidden" name="record_status" />
+          <i class="dropdown icon"></i>
+          <div class="default text">Ambos</div>
+          <div class="menu"></div>
+        </div>
+      </div>
+    </div>
+    <div class="two fields">
+      <div class="field">
+        <label>Aula</label>
+        <input type="text" v-model="classroom_name" placeholder="Buscar por nombre de aula..." />
+      </div>
+      <div class="field"></div>
+    </div>
+    <div class="two fields">
+      <div class="field">
+        <label>Fecha Desde</label>
+        <input type="date" v-model="date_from" />
+      </div>
+      <div class="field">
+        <label>Fecha Hasta</label>
+        <input type="date" v-model="date_to" />
+      </div>
+    </div>
+    <div class="ui blue icon labeled button" @click="submit">
+      <i class="check icon"></i> Consultar
+    </div>
+  </form>

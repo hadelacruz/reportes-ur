@@ -239,6 +239,14 @@
                         };
                     }
 
+                    const hasNSP = stageBlocks.some(x => x && x.name === "NSP" && x.nsp === true);
+                    if (hasNSP) {
+                        return {
+                            tiene: "Si",
+                            nota: "NSP"
+                        };
+                    }
+
                     return {
                         tiene: "No",
                         nota: ""
