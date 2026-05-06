@@ -119,10 +119,10 @@ function isValidStudentForActa(studentEntry, recordType, recordStages) {
   }
 
   if (phase === "Recuperacion 1" || phase === "Recuperacion 2") {
-    var recoveryValue = getStageValue(studentStages, phase);
-    if (isNumericValue(recoveryValue)) return true;
-    recoveryValue = getStageValue(studentStages, normalizeRecordType(phase));
-    return isNumericValue(recoveryValue);
+    // Para actas de recuperación, el valor se coloca en "Fase Final - Examen"
+    // Validar que Fase Final - Examen tenga valor numérico
+    var finalExamValue = getStageValue(studentStages, "Fase Final - Examen");
+    return isNumericValue(finalExamValue);
   }
 
   if (phase === "Fase 1" || phase === "Fase 2" || phase === "Fase Final") {

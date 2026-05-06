@@ -1,5 +1,5 @@
 {
-  data: function() { return {} },
+  data: function() { return { loading: false } },
   methods: {
     totalActas: function() {
       if (!this.result || !this.result.length) return 0;
