@@ -1521,26 +1521,26 @@ DROP TABLE IF EXISTS `crs_record`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `crs_record` (
-  `record_id` bigint NOT NULL AUTO_INCREMENT,
-  `branch_id` bigint NOT NULL,
-  `career_id` bigint NOT NULL,
-  `course_id` bigint NOT NULL,
-  `professor_id` bigint NOT NULL,
-  `studying_time_id` bigint NOT NULL,
-  `section_id` bigint NOT NULL,
-  `stages` longtext,
-  `create_date` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `create_user_id` bigint DEFAULT NULL,
-  `uuid` varchar(100) NOT NULL,
-  `detail` longtext,
-  `group` varchar(100) DEFAULT NULL,
-  `exam_date` date DEFAULT NULL,
-  `record_type` varchar(100) DEFAULT NULL,
-  `record_code` varchar(100) DEFAULT NULL,
-  `record_correction_number` bigint DEFAULT NULL,
-  `is_verified` tinyint DEFAULT NULL,
-  `is_rejected` tinyint DEFAULT NULL,
-  `rejection_reason` varchar(255) DEFAULT NULL,
+  `record_id` bigint NOT NULL AUTO_INCREMENT, /*Acta*/
+  `branch_id` bigint NOT NULL, /*Sede*/
+  `career_id` bigint NOT NULL, /*Carrera*/
+  `course_id` bigint NOT NULL, /*Curso*/
+  `professor_id` bigint NOT NULL, /*Profesor*/
+  `studying_time_id` bigint NOT NULL, /*Turno*/
+  `section_id` bigint NOT NULL, /*Sección*/
+  `stages` longtext, /*Etapas del proceso de asignación*/
+  `create_date` timestamp NULL DEFAULT CURRENT_TIMESTAMP, /*Fecha de creación del acta*/
+  `create_user_id` bigint DEFAULT NULL, /*Usuario que creó el acta*/
+  `uuid` varchar(100) NOT NULL, /*UUID del acta*/
+  `detail` longtext, /*Detalle del acta*/
+  `group` varchar(100) DEFAULT NULL, /*Grupo del acta*/
+  `exam_date` date DEFAULT NULL, /*Fecha del examen*/
+  `record_type` varchar(100) DEFAULT NULL, /*Tipo de acta*/
+  `record_code` varchar(100) DEFAULT NULL, /*Código del acta*/
+  `record_correction_number` bigint DEFAULT NULL, /*Número de corrección del acta*/
+  `is_verified` tinyint DEFAULT NULL, /*Indica si el acta está verificada*/
+  `is_rejected` tinyint DEFAULT NULL, /*Indica si el acta está rechazada*/
+  `rejection_reason` varchar(255) DEFAULT NULL, /*Motivo de rechazo del acta*/
   PRIMARY KEY (`record_id`),
   UNIQUE KEY `uuid` (`uuid`),
   KEY `crs_record_FK` (`studying_time_id`),

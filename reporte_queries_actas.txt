@@ -1,0 +1,1173 @@
+Running with environment development
+Using Database configuration {
+  username: 'root',
+  password: 'uregionalroot',
+  database: 'modul_dev',
+  host: 'modul.cuy5c3u60hc2.us-east-2.rds.amazonaws.com',
+  dialect: 'mysql',
+  insecureAuth: true,
+  logging: true,
+  minifyAliases: false,
+  benchmark: true
+}
+
+================================================================================
+1) Conteo por record_type
+================================================================================
+SQL:
+SELECT record_type, COUNT(*) AS n
+FROM crs_record
+GROUP BY record_type
+ORDER BY n DESC;
+
+RESULTADO:
+SQL (158) Executed (default): SELECT record_type, COUNT(*) AS n
+FROM crs_record
+GROUP BY record_type
+ORDER BY n DESC;
+  (9 filas)
+  --- fila 1 ---
+    record_type: Fase 1
+    n: 18996
+  --- fila 2 ---
+    record_type: Fase Final
+    n: 18317
+  --- fila 3 ---
+    record_type: Fase 2
+    n: 17712
+  --- fila 4 ---
+    record_type: Recuperacion 1
+    n: 3155
+  --- fila 5 ---
+    record_type: Recuperacion 2
+    n: 1729
+  --- fila 6 ---
+    record_type: Fase Extraordinario 2
+    n: 978
+  --- fila 7 ---
+    record_type: Fase Extraordinario 1
+    n: 705
+  --- fila 8 ---
+    record_type: Práctico
+    n: 23
+  --- fila 9 ---
+    record_type: final
+    n: 4
+
+================================================================================
+2) 1 fila completa de cada record_type (la mas reciente)
+================================================================================
+SQL:
+SELECT r.*
+FROM crs_record r
+INNER JOIN (
+  SELECT record_type, MAX(record_id) AS max_id
+  FROM crs_record
+  GROUP BY record_type
+) t ON t.max_id = r.record_id
+ORDER BY r.record_type;
+
+RESULTADO:
+SQL (252) Executed (default): SELECT r.*
+FROM crs_record r
+INNER JOIN (
+  SELECT record_type, MAX(record_id) AS max_id
+  FROM crs_record
+  GROUP BY record_type
+) t ON t.max_id = r.record_id
+ORDER BY r.record_type;
+  (9 filas)
+  --- fila 1 ---
+    record_id: 66979
+    branch_id: 11
+    career_id: 52
+    course_id: 845
+    professor_id: 2381
+    studying_time_id: 25
+    section_id: 17613
+    stages: [{"uuid":"3f5280a3-fa91-4dcd-b900-74e0113b0985","name":"Fase 1","tasks":[{"name":"Zona","weighting_percent":"100"},{"name":"Examen"}],"weighting":"30","weighting_percent":"30","nsp":true,"sde":false,"total":30,"is_reporting_stage":true},{"uuid":"21832a7c-5041-44e9-a9d1-2977a5a687a6","name":"Fase 2","tasks":[{"name":"Zona","weighting_percent":"100"},{"name":"Examen"}],"weighting":"30","weighting_pe ... (685 chars)
+    create_date: 2026-05-04T18:37:24.000Z
+    create_user_id: 7061
+    uuid: 343e3448-8df4-4214-8aad-099c849b83a6
+    detail: [{"student":{"uuid":"72130155-ecf8-4b01-a796-fb0bcfe83c34","name":"Emily Ixmucané Xol Chub","student_id_card":"2540227","status_code":"S","student_id":115252},"stages":[{"name":"Fase 1 - Zona","value":4},{"name":"Fase 1 - Examen","value":5},{"name":"Fase 2 - Zona","value":""},{"name":"Fase 2 - Examen","value":""},{"name":"Fase Final - Zona","value":""},{"name":"Fase Final - Examen","value":""}],"t ... (1230 chars)
+    group: Cobán - Técnico en Enfermeria - Jueves, Viernes y Sábado (Téc. Enfermería)
+    exam_date: 2026-05-30
+    record_type: Fase 1
+    record_code: 40-1327
+    record_correction_number: NULL
+    is_verified: NULL
+    is_rejected: NULL
+    rejection_reason: NULL
+  --- fila 2 ---
+    record_id: 66921
+    branch_id: 4
+    career_id: 2
+    course_id: 30
+    professor_id: 386
+    studying_time_id: 4
+    section_id: 6993
+    stages: [{"uuid":"a4189107-4499-4d0a-a287-87a693f55806","name":"Fase 1","tasks":[{"name":"Zona","weighting_percent":"100"},{"name":"Examen"}],"weighting_percent":"30","weighting":"30","nsp":true,"total":22,"is_reporting_stage":true},{"uuid":"1ed87f40-bed7-489a-a968-034e34b2852c","name":"Fase 2","tasks":[{"name":"Zona","weighting_percent":"100"},{"name":"Examen"}],"weighting_percent":"30","weighting":"30", ... (645 chars)
+    create_date: 2026-02-17T16:59:22.000Z
+    create_user_id: 7808
+    uuid: 90382091-c8e6-4e91-96ea-49f5c227ba1c
+    detail: [{"student":{"uuid":"19f22dfa-f2b5-4439-a125-4de76f0b7fe9","name":"Evelio  Alejandro Sánchez  Morales","student_id_card":"2329097","status_code":"A","student_id":105339},"stages":[{"name":"Fase 1 - Zona","value":8},{"name":"Fase 1 - Examen","value":15},{"name":"Fase 2 - Zona","value":6},{"name":"Fase 2 - Examen","value":16},{"name":"Fase Final - Examen"}],"total":45},{"student":{"uuid":"1828a1af-e ... (1100 chars)
+    group: Totonicapán - Licenciatura en Ciencias Jurídicas y Sociales - Domingo
+    exam_date: 2025-05-11
+    record_type: Fase 2
+    record_code: 18-130
+    record_correction_number: 2
+    is_verified: NULL
+    is_rejected: NULL
+    rejection_reason: NULL
+  --- fila 3 ---
+    record_id: 66841
+    branch_id: 9
+    career_id: 3
+    course_id: 37
+    professor_id: 175
+    studying_time_id: 3
+    section_id: 8948
+    stages: [{"uuid":"a4189107-4499-4d0a-a287-87a693f55806","name":"Fase 1","tasks":[{"name":"Zona","weighting_percent":"100"},{"name":"Examen"}],"weighting_percent":"30","weighting":"30","nsp":true,"total":30,"is_reporting_stage":true},{"uuid":"1ed87f40-bed7-489a-a968-034e34b2852c","name":"Fase 2","tasks":[{"name":"Zona","weighting_percent":"100"},{"name":"Examen"}],"weighting_percent":"30","weighting":"30", ... (660 chars)
+    create_date: 2026-01-27T17:15:35.000Z
+    create_user_id: 242
+    uuid: d240f0aa-95ec-48f8-b33b-4569c734dd5a
+    detail: [{"student":{"uuid":"540b762f-b228-448e-8f49-b81fc12ade25","name":"Edwin Geovany Bala Toj","student_id_card":"2338068","status_code":"A","student_id":100757},"stages":[{"name":"Fase 1 - Zona","value":10},{"name":"Fase 1 - Examen","value":20},{"name":"Fase 2 - Zona","value":""},{"name":"Fase 2 - Examen","value":""},{"name":"Fase Final - Zona","value":""},{"name":"Fase Final - Examen","value":""}]," ... (411 chars)
+    group: Chimaltenango - Licenciatura en Contaduría Pública y Auditoría - Sábado
+    exam_date: 2025-09-06
+    record_type: Fase Extraordinario 1
+    record_code: 38-24
+    record_correction_number: NULL
+    is_verified: NULL
+    is_rejected: NULL
+    rejection_reason: NULL
+  --- fila 4 ---
+    record_id: 66857
+    branch_id: 22
+    career_id: 9
+    course_id: 407
+    professor_id: 355
+    studying_time_id: 4
+    section_id: 9441
+    stages: [{"uuid":"a4189107-4499-4d0a-a287-87a693f55806","name":"Fase 1","tasks":[{"name":"Zona","weighting_percent":"100"},{"name":"Examen"}],"weighting_percent":"30","weighting":"30","nsp":true,"total":10,"is_reporting_stage":true},{"uuid":"1ed87f40-bed7-489a-a968-034e34b2852c","name":"Fase 2","tasks":[{"name":"Zona","weighting_percent":"100"},{"name":"Examen"}],"weighting_percent":"30","weighting":"30", ... (662 chars)
+    create_date: 2026-01-28T18:13:33.000Z
+    create_user_id: 422
+    uuid: 5f35535b-82bd-4ae7-bb26-4a107e536665
+    detail: [{"student":{"uuid":"a5f0c2eb-ccab-444e-bf2e-77b62a2c7f0f","name":"(De Baja) Carmen Magdalena Tiul Chén","student_id_card":"2446151","status_code":"B","student_id":107762},"stages":[{"name":"Fase 1 - Zona","value":5},{"name":"Fase 1 - Examen","value":"NSP"},{"name":"Fase 2 - Zona","value":0},{"name":"Fase 2 - Examen","value":"NSP"},{"name":"Fase Final - Zona","value":""},{"name":"Fase Final - Exam ... (828 chars)
+    group: Fray Bartolomé - Profesorado en Educación Primaria Intercultural - Domingo
+    exam_date: 2025-10-19
+    record_type: Fase Extraordinario 2
+    record_code: 46-229
+    record_correction_number: 4
+    is_verified: NULL
+    is_rejected: NULL
+    rejection_reason: NULL
+  --- fila 5 ---
+    record_id: 67053
+    branch_id: 12
+    career_id: 18
+    course_id: 31
+    professor_id: 210
+    studying_time_id: 4
+    section_id: 12326
+    stages: [{"uuid":"a4189107-4499-4d0a-a287-87a693f55806","name":"Fase 1","tasks":[{"name":"Zona","weighting_percent":"100"},{"name":"Examen"}],"weighting_percent":"30","weighting":"30","nsp":true,"total":30,"is_reporting_stage":true},{"uuid":"1ed87f40-bed7-489a-a968-034e34b2852c","name":"Fase 2","tasks":[{"name":"Zona","weighting_percent":"100"},{"name":"Examen"}],"weighting_percent":"30","weighting":"30", ... (662 chars)
+    create_date: 2026-05-05T21:54:35.000Z
+    create_user_id: 1
+    uuid: f22664d1-f381-4416-a4e4-0db0df178742
+    detail: [{"student":{"uuid":"420776cd-78fa-4ef3-add0-4f23935eb4a1","name":"Sergio Danilo Pérez Uxla","student_id_card":"2435002","status_code":"A","student_id":105429},"stages":[{"name":"Fase 1 - Zona","value":7},{"name":"Fase 1 - Examen","value":20},{"name":"Fase 2 - Zona","value":10},{"name":"Fase 2 - Examen","value":20},{"name":"Fase Final - Zona","value":10},{"name":"Fase Final - Examen","value":30}], ... (2894 chars)
+    group: San Pedro Sacatepéquez, Guatemala - Licenciatura en Administración de Sistemas Informáticos - Doming
+    exam_date: 2025-11-23
+    record_type: Fase Final
+    record_code: 35-350
+    record_correction_number: 3
+    is_verified: NULL
+    is_rejected: NULL
+    rejection_reason: NULL
+  --- fila 6 ---
+    record_id: 67051
+    branch_id: 25
+    career_id: 37
+    course_id: 576
+    professor_id: 276
+    studying_time_id: 4
+    section_id: 12353
+    stages: [{"uuid":"e134342f-2c63-491e-97af-243086d773d1","name":"Fase Final","weighting_percent":"40","extra":false,"weighting":"40","nsp":true,"sde":true,"total":40}]
+    create_date: 2026-05-05T21:37:29.000Z
+    create_user_id: 1
+    uuid: 69367c95-eeb6-425e-a4ac-96887a196eb1
+    detail: [{"student":{"uuid":"2585846e-0b04-4d71-8e52-22ddf6f5e527","name":"Lourdes Santander Pineda Pascual","student_id_card":"2548067","status_code":"A"},"stages":[{"name":"Fase Final","value":7.5}],"total":6.68}]
+    group: Ipala  - Ingeniería en Producción Agrícola - No especificado
+    exam_date: 2026-05-05
+    record_type: final
+    record_code: 48-368
+    record_correction_number: NULL
+    is_verified: NULL
+    is_rejected: NULL
+    rejection_reason: NULL
+  --- fila 7 ---
+    record_id: 67047
+    branch_id: 3
+    career_id: 11
+    course_id: 197
+    professor_id: 3433
+    studying_time_id: 3
+    section_id: 17635
+    stages: [{"uuid":"9bb527f9-7655-40f8-b676-66ac0e15820d","name":"Seminario","tasks":[{"name":"Seminario","weighting_percent":"100"}],"weighting":"10","weighting_percent":"10","nsp":false,"sde":false,"is_reporting_stage":true},{"uuid":"ed4f0214-3a42-4e10-a803-3ce03f4439e7","name":"Plan Práctico","tasks":[{"name":"Plan Práctico","weighting_percent":"100"}],"weighting":"10","weighting_percent":"10","nsp":fals ... (883 chars)
+    create_date: 2026-05-05T18:08:26.000Z
+    create_user_id: 8145
+    uuid: 72d12c4f-51d0-4fda-9bcd-9470f1a6a8cf
+    detail: [{"student":{"uuid":"9d0214e2-02e3-46f5-9b79-f5f8b1e2f3c0","name":"Santos José Grijalva  García ","student_id_card":"2214022","status_code":"A","student_id":94754},"stages":[{"name":"Seminario","value":10},{"name":"Plan Práctico","value":10},{"name":"Desarrollo","value":20},{"name":"Informe Final","value":20},{"name":"Consolidado","value":60}],"total":60},{"student":{"uuid":"d2103888-02cc-48e4-b26 ... (716 chars)
+    group: San José Pinula - Licenciatura en Ciencias de la Comunicación con énfasis en Periodismo - Sábado
+    exam_date: 2026-07-24
+    record_type: Práctico
+    record_code: 14-1344
+    record_correction_number: 4
+    is_verified: NULL
+    is_rejected: NULL
+    rejection_reason: NULL
+  --- fila 8 ---
+    record_id: 66942
+    branch_id: 11
+    career_id: 4
+    course_id: 26
+    professor_id: 322
+    studying_time_id: 4
+    section_id: 10584
+    stages: [{"uuid":"a4189107-4499-4d0a-a287-87a693f55806","name":"Fase 1","tasks":[{"name":"Zona","weighting_percent":"100"},{"name":"Examen"}],"weighting_percent":"30","weighting":"30","nsp":true,"total":26,"is_reporting_stage":true},{"uuid":"1ed87f40-bed7-489a-a968-034e34b2852c","name":"Fase 2","tasks":[{"name":"Zona","weighting_percent":"100"},{"name":"Examen"}],"weighting_percent":"30","weighting":"30", ... (662 chars)
+    create_date: 2026-02-19T17:29:21.000Z
+    create_user_id: 390
+    uuid: 6ee61aba-327f-46a0-86b5-d085ac977783
+    detail: [{"student":{"uuid":"30ea3617-95b5-4b23-8d91-9333b38ef09d","name":"Nancy Mercedes Chinchilla Milian","student_id_card":"2040188","status_code":"A","student_id":88259},"stages":[{"name":"Fase 1 - Zona","value":0},{"name":"Fase 1 - Examen","value":7},{"name":"Fase 2 - Zona","value":9},{"name":"Fase 2 - Examen","value":5},{"name":"Fase Final - Zona","value":0},{"name":"Fase Final - Examen","value":40 ... (1657 chars)
+    group: Cobán - Licenciatura en Administración de Empresas - Domingo
+    exam_date: 2025-12-07
+    record_type: Recuperacion 1
+    record_code: 40-847
+    record_correction_number: NULL
+    is_verified: NULL
+    is_rejected: NULL
+    rejection_reason: NULL
+  --- fila 9 ---
+    record_id: 66943
+    branch_id: 11
+    career_id: 4
+    course_id: 26
+    professor_id: 322
+    studying_time_id: 4
+    section_id: 10584
+    stages: [{"uuid":"a4189107-4499-4d0a-a287-87a693f55806","name":"Fase 1","tasks":[{"name":"Zona","weighting_percent":"100"},{"name":"Examen"}],"weighting_percent":"30","weighting":"30","nsp":true,"total":26,"is_reporting_stage":true},{"uuid":"1ed87f40-bed7-489a-a968-034e34b2852c","name":"Fase 2","tasks":[{"name":"Zona","weighting_percent":"100"},{"name":"Examen"}],"weighting_percent":"30","weighting":"30", ... (662 chars)
+    create_date: 2026-02-19T17:29:41.000Z
+    create_user_id: 390
+    uuid: 0ed5bdaa-3641-4344-9eab-2e37e61cc517
+    detail: [{"student":{"uuid":"e53f3801-4d29-492e-8f75-3d6c6ca2a2f3","name":"Emerson Omar Calel Cojoc","student_id_card":"2440144","status_code":"S","student_id":106245},"stages":[{"name":"Fase 1 - Zona","value":0},{"name":"Fase 1 - Examen","value":6},{"name":"Fase 2 - Zona","value":10},{"name":"Fase 2 - Examen","value":15},{"name":"Fase Final - Zona","value":0},{"name":"Fase Final - Examen","value":"NSP"}] ... (837 chars)
+    group: Cobán - Licenciatura en Administración de Empresas - Domingo
+    exam_date: 2025-12-14
+    record_type: Recuperacion 2
+    record_code: 40-847
+    record_correction_number: NULL
+    is_verified: NULL
+    is_rejected: NULL
+    rejection_reason: NULL
+
+================================================================================
+3) Estructura de la tabla (columnas, tipos)
+================================================================================
+SQL:
+SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_KEY, COLUMN_DEFAULT, EXTRA
+FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'crs_record'
+ORDER BY ORDINAL_POSITION;
+
+RESULTADO:
+SQL (98) Executed (default): SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_KEY, COLUMN_DEFAULT, EXTRA
+FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'crs_record'
+ORDER BY ORDINAL_POSITION;
+  (20 filas)
+  --- fila 1 ---
+    COLUMN_NAME: record_id
+    COLUMN_TYPE: bigint
+    IS_NULLABLE: NO
+    COLUMN_KEY: PRI
+    COLUMN_DEFAULT: NULL
+    EXTRA: auto_increment
+  --- fila 2 ---
+    COLUMN_NAME: branch_id
+    COLUMN_TYPE: bigint
+    IS_NULLABLE: NO
+    COLUMN_KEY: MUL
+    COLUMN_DEFAULT: NULL
+    EXTRA: 
+  --- fila 3 ---
+    COLUMN_NAME: career_id
+    COLUMN_TYPE: bigint
+    IS_NULLABLE: NO
+    COLUMN_KEY: MUL
+    COLUMN_DEFAULT: NULL
+    EXTRA: 
+  --- fila 4 ---
+    COLUMN_NAME: course_id
+    COLUMN_TYPE: bigint
+    IS_NULLABLE: NO
+    COLUMN_KEY: MUL
+    COLUMN_DEFAULT: NULL
+    EXTRA: 
+  --- fila 5 ---
+    COLUMN_NAME: professor_id
+    COLUMN_TYPE: bigint
+    IS_NULLABLE: NO
+    COLUMN_KEY: MUL
+    COLUMN_DEFAULT: NULL
+    EXTRA: 
+  --- fila 6 ---
+    COLUMN_NAME: studying_time_id
+    COLUMN_TYPE: bigint
+    IS_NULLABLE: NO
+    COLUMN_KEY: MUL
+    COLUMN_DEFAULT: NULL
+    EXTRA: 
+  --- fila 7 ---
+    COLUMN_NAME: section_id
+    COLUMN_TYPE: bigint
+    IS_NULLABLE: NO
+    COLUMN_KEY: MUL
+    COLUMN_DEFAULT: NULL
+    EXTRA: 
+  --- fila 8 ---
+    COLUMN_NAME: stages
+    COLUMN_TYPE: longtext
+    IS_NULLABLE: YES
+    COLUMN_KEY: 
+    COLUMN_DEFAULT: NULL
+    EXTRA: 
+  --- fila 9 ---
+    COLUMN_NAME: create_date
+    COLUMN_TYPE: timestamp
+    IS_NULLABLE: YES
+    COLUMN_KEY: 
+    COLUMN_DEFAULT: CURRENT_TIMESTAMP
+    EXTRA: DEFAULT_GENERATED
+  --- fila 10 ---
+    COLUMN_NAME: create_user_id
+    COLUMN_TYPE: bigint
+    IS_NULLABLE: YES
+    COLUMN_KEY: MUL
+    COLUMN_DEFAULT: NULL
+    EXTRA: 
+  --- fila 11 ---
+    COLUMN_NAME: uuid
+    COLUMN_TYPE: varchar(100)
+    IS_NULLABLE: NO
+    COLUMN_KEY: UNI
+    COLUMN_DEFAULT: NULL
+    EXTRA: 
+  --- fila 12 ---
+    COLUMN_NAME: detail
+    COLUMN_TYPE: longtext
+    IS_NULLABLE: YES
+    COLUMN_KEY: 
+    COLUMN_DEFAULT: NULL
+    EXTRA: 
+  --- fila 13 ---
+    COLUMN_NAME: group
+    COLUMN_TYPE: varchar(100)
+    IS_NULLABLE: YES
+    COLUMN_KEY: 
+    COLUMN_DEFAULT: NULL
+    EXTRA: 
+  --- fila 14 ---
+    COLUMN_NAME: exam_date
+    COLUMN_TYPE: date
+    IS_NULLABLE: YES
+    COLUMN_KEY: 
+    COLUMN_DEFAULT: NULL
+    EXTRA: 
+  --- fila 15 ---
+    COLUMN_NAME: record_type
+    COLUMN_TYPE: varchar(100)
+    IS_NULLABLE: YES
+    COLUMN_KEY: 
+    COLUMN_DEFAULT: NULL
+    EXTRA: 
+  --- fila 16 ---
+    COLUMN_NAME: record_code
+    COLUMN_TYPE: varchar(100)
+    IS_NULLABLE: YES
+    COLUMN_KEY: 
+    COLUMN_DEFAULT: NULL
+    EXTRA: 
+  --- fila 17 ---
+    COLUMN_NAME: record_correction_number
+    COLUMN_TYPE: bigint
+    IS_NULLABLE: YES
+    COLUMN_KEY: 
+    COLUMN_DEFAULT: NULL
+    EXTRA: 
+  --- fila 18 ---
+    COLUMN_NAME: is_verified
+    COLUMN_TYPE: tinyint
+    IS_NULLABLE: YES
+    COLUMN_KEY: 
+    COLUMN_DEFAULT: NULL
+    EXTRA: 
+  --- fila 19 ---
+    COLUMN_NAME: is_rejected
+    COLUMN_TYPE: tinyint
+    IS_NULLABLE: YES
+    COLUMN_KEY: 
+    COLUMN_DEFAULT: NULL
+    EXTRA: 
+  --- fila 20 ---
+    COLUMN_NAME: rejection_reason
+    COLUMN_TYPE: varchar(255)
+    IS_NULLABLE: YES
+    COLUMN_KEY: 
+    COLUMN_DEFAULT: NULL
+    EXTRA: 
+
+================================================================================
+4) Indices de la tabla
+================================================================================
+SQL:
+SELECT INDEX_NAME, COLUMN_NAME, NON_UNIQUE, SEQ_IN_INDEX
+FROM information_schema.STATISTICS
+WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'crs_record'
+ORDER BY INDEX_NAME, SEQ_IN_INDEX;
+
+RESULTADO:
+SQL (97) Executed (default): SELECT INDEX_NAME, COLUMN_NAME, NON_UNIQUE, SEQ_IN_INDEX
+FROM information_schema.STATISTICS
+WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'crs_record'
+ORDER BY INDEX_NAME, SEQ_IN_INDEX;
+  (9 filas)
+  --- fila 1 ---
+    INDEX_NAME: crs_record_FK
+    COLUMN_NAME: studying_time_id
+    NON_UNIQUE: 1
+    SEQ_IN_INDEX: 1
+  --- fila 2 ---
+    INDEX_NAME: crs_record_FK_1
+    COLUMN_NAME: branch_id
+    NON_UNIQUE: 1
+    SEQ_IN_INDEX: 1
+  --- fila 3 ---
+    INDEX_NAME: crs_record_FK_2
+    COLUMN_NAME: career_id
+    NON_UNIQUE: 1
+    SEQ_IN_INDEX: 1
+  --- fila 4 ---
+    INDEX_NAME: crs_record_FK_3
+    COLUMN_NAME: course_id
+    NON_UNIQUE: 1
+    SEQ_IN_INDEX: 1
+  --- fila 5 ---
+    INDEX_NAME: crs_record_FK_4
+    COLUMN_NAME: professor_id
+    NON_UNIQUE: 1
+    SEQ_IN_INDEX: 1
+  --- fila 6 ---
+    INDEX_NAME: crs_record_FK_5
+    COLUMN_NAME: section_id
+    NON_UNIQUE: 1
+    SEQ_IN_INDEX: 1
+  --- fila 7 ---
+    INDEX_NAME: crs_record_FK_6
+    COLUMN_NAME: create_user_id
+    NON_UNIQUE: 1
+    SEQ_IN_INDEX: 1
+  --- fila 8 ---
+    INDEX_NAME: PRIMARY
+    COLUMN_NAME: record_id
+    NON_UNIQUE: 0
+    SEQ_IN_INDEX: 1
+  --- fila 9 ---
+    INDEX_NAME: uuid
+    COLUMN_NAME: uuid
+    NON_UNIQUE: 0
+    SEQ_IN_INDEX: 1
+
+================================================================================
+5) Mismo record_code -> ¿comparte filas entre fases? (un grupo de ejemplo)
+================================================================================
+SQL:
+SELECT record_id, record_code, record_type, record_correction_number,
+       section_id, exam_date, create_date, create_user_id,
+       CHAR_LENGTH(stages) AS stages_chars, CHAR_LENGTH(detail) AS detail_chars
+FROM crs_record
+WHERE record_code = '35-350'
+ORDER BY record_type, record_correction_number, record_id;
+
+RESULTADO:
+SQL (213) Executed (default): SELECT record_id, record_code, record_type, record_correction_number,
+       section_id, exam_date, create_date, create_user_id,
+       CHAR_LENGTH(stages) AS stages_chars, CHAR_LENGTH(detail) AS detail_chars
+FROM crs_record
+WHERE record_code = '35-350'
+ORDER BY record_type, record_correction_number, record_id;
+  (7 filas)
+  --- fila 1 ---
+    record_id: 55857
+    record_code: 35-350
+    record_type: Fase 1
+    record_correction_number: NULL
+    section_id: 12326
+    exam_date: 2025-08-24
+    create_date: 2025-12-12T15:19:38.000Z
+    create_user_id: 276
+    stages_chars: 662
+    detail_chars: 2895
+  --- fila 2 ---
+    record_id: 55867
+    record_code: 35-350
+    record_type: Fase 2
+    record_correction_number: NULL
+    section_id: 12326
+    exam_date: 2025-10-05
+    create_date: 2025-12-12T15:24:27.000Z
+    create_user_id: 276
+    stages_chars: 662
+    detail_chars: 2740
+  --- fila 3 ---
+    record_id: 46027
+    record_code: 35-350
+    record_type: Fase Final
+    record_correction_number: NULL
+    section_id: 12326
+    exam_date: 2025-11-23
+    create_date: 2025-12-10T02:48:34.000Z
+    create_user_id: 276
+    stages_chars: 662
+    detail_chars: 2894
+  --- fila 4 ---
+    record_id: 55868
+    record_code: 35-350
+    record_type: Fase Final
+    record_correction_number: 1
+    section_id: 12326
+    exam_date: 2025-11-23
+    create_date: 2025-12-12T15:24:35.000Z
+    create_user_id: 276
+    stages_chars: 662
+    detail_chars: 2894
+  --- fila 5 ---
+    record_id: 67052
+    record_code: 35-350
+    record_type: Fase Final
+    record_correction_number: 2
+    section_id: 12326
+    exam_date: 2025-11-23
+    create_date: 2026-05-05T21:40:36.000Z
+    create_user_id: 1
+    stages_chars: 662
+    detail_chars: 2894
+  --- fila 6 ---
+    record_id: 67053
+    record_code: 35-350
+    record_type: Fase Final
+    record_correction_number: 3
+    section_id: 12326
+    exam_date: 2025-11-23
+    create_date: 2026-05-05T21:54:35.000Z
+    create_user_id: 1
+    stages_chars: 662
+    detail_chars: 2894
+  --- fila 7 ---
+    record_id: 67048
+    record_code: 35-350
+    record_type: final
+    record_correction_number: NULL
+    section_id: 12326
+    exam_date: 2026-05-05
+    create_date: 2026-05-05T21:37:27.000Z
+    create_user_id: 1
+    stages_chars: 144
+    detail_chars: 1395
+
+================================================================================
+6) Multiples correcciones del mismo (section_id, record_type) (top 10)
+================================================================================
+SQL:
+SELECT section_id, record_type,
+       COUNT(*) AS versiones,
+       MIN(record_correction_number) AS min_corr,
+       MAX(record_correction_number) AS max_corr,
+       MIN(create_date) AS primera,
+       MAX(create_date) AS ultima
+FROM crs_record
+GROUP BY section_id, record_type
+HAVING COUNT(*) > 1
+ORDER BY versiones DESC
+LIMIT 10;
+
+RESULTADO:
+SQL (223) Executed (default): SELECT section_id, record_type,
+       COUNT(*) AS versiones,
+       MIN(record_correction_number) AS min_corr,
+       MAX(record_correction_number) AS max_corr,
+       MIN(create_date) AS primera,
+       MAX(create_date) AS ultima
+FROM crs_record
+GROUP BY section_id, record_type
+HAVING COUNT(*) > 1
+ORDER BY versiones DESC
+LIMIT 10;
+  (10 filas)
+  --- fila 1 ---
+    section_id: 8082
+    record_type: Fase 1
+    versiones: 127
+    min_corr: 1
+    max_corr: 4
+    primera: 2025-04-26T00:13:23.000Z
+    ultima: 2025-07-23T23:32:58.000Z
+  --- fila 2 ---
+    section_id: 9767
+    record_type: Fase Final
+    versiones: 99
+    min_corr: 1
+    max_corr: 20
+    primera: 2025-12-10T03:28:51.000Z
+    ultima: 2025-12-11T23:02:41.000Z
+  --- fila 3 ---
+    section_id: 8083
+    record_type: Fase Final
+    versiones: 84
+    min_corr: 1
+    max_corr: 3
+    primera: 2025-06-26T04:53:48.000Z
+    ultima: 2025-06-27T04:33:37.000Z
+  --- fila 4 ---
+    section_id: 8641
+    record_type: Fase 1
+    versiones: 79
+    min_corr: 1
+    max_corr: 4
+    primera: 2025-04-25T03:56:48.000Z
+    ultima: 2025-05-12T18:28:00.000Z
+  --- fila 5 ---
+    section_id: 8082
+    record_type: Fase 2
+    versiones: 75
+    min_corr: 1
+    max_corr: 2
+    primera: 2025-06-03T00:01:45.000Z
+    ultima: 2025-06-26T13:15:15.000Z
+  --- fila 6 ---
+    section_id: 8079
+    record_type: Fase Final
+    versiones: 73
+    min_corr: 1
+    max_corr: 3
+    primera: 2025-07-04T01:01:59.000Z
+    ultima: 2025-07-08T02:51:32.000Z
+  --- fila 7 ---
+    section_id: 8081
+    record_type: Fase 1
+    versiones: 73
+    min_corr: 1
+    max_corr: 2
+    primera: 2025-04-24T19:56:12.000Z
+    ultima: 2025-07-27T03:02:50.000Z
+  --- fila 8 ---
+    section_id: 8079
+    record_type: Fase 1
+    versiones: 73
+    min_corr: 1
+    max_corr: 2
+    primera: 2025-04-25T22:36:21.000Z
+    ultima: 2025-05-13T16:11:01.000Z
+  --- fila 9 ---
+    section_id: 6902
+    record_type: Fase 1
+    versiones: 72
+    min_corr: 1
+    max_corr: 8
+    primera: 2025-04-24T16:07:23.000Z
+    ultima: 2025-04-29T02:21:06.000Z
+  --- fila 10 ---
+    section_id: 8081
+    record_type: Fase Final
+    versiones: 72
+    min_corr: 1
+    max_corr: 2
+    primera: 2025-06-27T14:55:43.000Z
+    ultima: 2025-07-27T03:11:44.000Z
+
+================================================================================
+7) Acta tipo 'Práctico' (1 fila completa)
+================================================================================
+SQL:
+SELECT *
+FROM crs_record
+WHERE record_type = 'Práctico'
+ORDER BY record_id DESC
+LIMIT 1;
+
+RESULTADO:
+SQL (94) Executed (default): SELECT *
+FROM crs_record
+WHERE record_type = 'Práctico'
+ORDER BY record_id DESC
+LIMIT 1;
+  (1 fila)
+  --- fila 1 ---
+    record_id: 67047
+    branch_id: 3
+    career_id: 11
+    course_id: 197
+    professor_id: 3433
+    studying_time_id: 3
+    section_id: 17635
+    stages: [{"uuid":"9bb527f9-7655-40f8-b676-66ac0e15820d","name":"Seminario","tasks":[{"name":"Seminario","weighting_percent":"100"}],"weighting":"10","weighting_percent":"10","nsp":false,"sde":false,"is_reporting_stage":true},{"uuid":"ed4f0214-3a42-4e10-a803-3ce03f4439e7","name":"Plan Práctico","tasks":[{"name":"Plan Práctico","weighting_percent":"100"}],"weighting":"10","weighting_percent":"10","nsp":fals ... (883 chars)
+    create_date: 2026-05-05T18:08:26.000Z
+    create_user_id: 8145
+    uuid: 72d12c4f-51d0-4fda-9bcd-9470f1a6a8cf
+    detail: [{"student":{"uuid":"9d0214e2-02e3-46f5-9b79-f5f8b1e2f3c0","name":"Santos José Grijalva  García ","student_id_card":"2214022","status_code":"A","student_id":94754},"stages":[{"name":"Seminario","value":10},{"name":"Plan Práctico","value":10},{"name":"Desarrollo","value":20},{"name":"Informe Final","value":20},{"name":"Consolidado","value":60}],"total":60},{"student":{"uuid":"d2103888-02cc-48e4-b26 ... (716 chars)
+    group: San José Pinula - Licenciatura en Ciencias de la Comunicación con énfasis en Periodismo - Sábado
+    exam_date: 2026-07-24
+    record_type: Práctico
+    record_code: 14-1344
+    record_correction_number: 4
+    is_verified: NULL
+    is_rejected: NULL
+    rejection_reason: NULL
+
+================================================================================
+8) Acta tipo 'final' (minúsculas) - todas las filas
+================================================================================
+SQL:
+SELECT record_id, record_code, record_type, section_id, exam_date,
+       create_date, create_user_id, record_correction_number,
+       LEFT(stages, 200) AS stages_preview
+FROM crs_record
+WHERE record_type = 'final'
+ORDER BY record_id DESC;
+
+RESULTADO:
+SQL (173) Executed (default): SELECT record_id, record_code, record_type, section_id, exam_date,
+       create_date, create_user_id, record_correction_number,
+       LEFT(stages, 200) AS stages_preview
+FROM crs_record
+WHERE record_type = 'final'
+ORDER BY record_id DESC;
+  (4 filas)
+  --- fila 1 ---
+    record_id: 67051
+    record_code: 48-368
+    record_type: final
+    section_id: 12353
+    exam_date: 2026-05-05
+    create_date: 2026-05-05T21:37:29.000Z
+    create_user_id: 1
+    record_correction_number: NULL
+    stages_preview: [{"uuid":"e134342f-2c63-491e-97af-243086d773d1","name":"Fase Final","weighting_percent":"40","extra":false,"weighting":"40","nsp":true,"sde":true,"total":40}]
+  --- fila 2 ---
+    record_id: 67050
+    record_code: 35-368
+    record_type: final
+    section_id: 12353
+    exam_date: 2026-05-05
+    create_date: 2026-05-05T21:37:28.000Z
+    create_user_id: 1
+    record_correction_number: NULL
+    stages_preview: [{"uuid":"e134342f-2c63-491e-97af-243086d773d1","name":"Fase Final","weighting_percent":"40","extra":false,"weighting":"40","nsp":true,"sde":true,"total":40}]
+  --- fila 3 ---
+    record_id: 67049
+    record_code: 35-368
+    record_type: final
+    section_id: 12353
+    exam_date: 2026-05-05
+    create_date: 2026-05-05T21:37:27.000Z
+    create_user_id: 1
+    record_correction_number: NULL
+    stages_preview: [{"uuid":"e134342f-2c63-491e-97af-243086d773d1","name":"Fase Final","weighting_percent":"40","extra":false,"weighting":"40","nsp":true,"sde":true,"total":40}]
+  --- fila 4 ---
+    record_id: 67048
+    record_code: 35-350
+    record_type: final
+    section_id: 12326
+    exam_date: 2026-05-05
+    create_date: 2026-05-05T21:37:27.000Z
+    create_user_id: 1
+    record_correction_number: NULL
+    stages_preview: [{"uuid":"285b5b3c-97b5-47a8-8482-7511e55872fb","name":"Fase Final","weighting_percent":"40","weighting":"40","nsp":true,"sde":true,"total":40}]
+
+================================================================================
+9) Generadas por mes/año por fase (ultimos 24 meses)
+================================================================================
+SQL:
+SELECT DATE_FORMAT(create_date, '%Y-%m') AS yyyymm,
+       record_type,
+       COUNT(*) AS n
+FROM crs_record
+WHERE create_date >= DATE_SUB(CURDATE(), INTERVAL 24 MONTH)
+GROUP BY yyyymm, record_type
+ORDER BY yyyymm DESC, record_type;
+
+RESULTADO:
+SQL (182) Executed (default): SELECT DATE_FORMAT(create_date, '%Y-%m') AS yyyymm,
+       record_type,
+       COUNT(*) AS n
+FROM crs_record
+WHERE create_date >= DATE_SUB(CURDATE(), INTERVAL 24 MONTH)
+GROUP BY yyyymm, record_type
+ORDER BY yyyymm DESC, record_type;
+  (84 filas)
+  --- fila 1 ---
+    yyyymm: 2026-05
+    record_type: Fase 1
+    n: 1
+  --- fila 2 ---
+    yyyymm: 2026-05
+    record_type: Fase Final
+    n: 2
+  --- fila 3 ---
+    yyyymm: 2026-05
+    record_type: final
+    n: 4
+  --- fila 4 ---
+    yyyymm: 2026-05
+    record_type: Práctico
+    n: 12
+  --- fila 5 ---
+    yyyymm: 2026-04
+    record_type: Fase 1
+    n: 19
+  --- fila 6 ---
+    yyyymm: 2026-04
+    record_type: Fase Final
+    n: 3
+  --- fila 7 ---
+    yyyymm: 2026-04
+    record_type: Práctico
+    n: 11
+  --- fila 8 ---
+    yyyymm: 2026-02
+    record_type: Fase 1
+    n: 7
+  --- fila 9 ---
+    yyyymm: 2026-02
+    record_type: Fase 2
+    n: 11
+  --- fila 10 ---
+    yyyymm: 2026-02
+    record_type: Fase Final
+    n: 9
+  --- fila 11 ---
+    yyyymm: 2026-02
+    record_type: Recuperacion 1
+    n: 17
+  --- fila 12 ---
+    yyyymm: 2026-02
+    record_type: Recuperacion 2
+    n: 14
+  --- fila 13 ---
+    yyyymm: 2026-01
+    record_type: Fase 1
+    n: 79
+  --- fila 14 ---
+    yyyymm: 2026-01
+    record_type: Fase 2
+    n: 72
+  --- fila 15 ---
+    yyyymm: 2026-01
+    record_type: Fase Extraordinario 1
+    n: 1
+  --- fila 16 ---
+    yyyymm: 2026-01
+    record_type: Fase Extraordinario 2
+    n: 15
+  --- fila 17 ---
+    yyyymm: 2026-01
+    record_type: Fase Final
+    n: 119
+  --- fila 18 ---
+    yyyymm: 2026-01
+    record_type: Recuperacion 1
+    n: 65
+  --- fila 19 ---
+    yyyymm: 2026-01
+    record_type: Recuperacion 2
+    n: 62
+  --- fila 20 ---
+    yyyymm: 2025-12
+    record_type: Fase 1
+    n: 6646
+  --- fila 21 ---
+    yyyymm: 2025-12
+    record_type: Fase 2
+    n: 6666
+  --- fila 22 ---
+    yyyymm: 2025-12
+    record_type: Fase Extraordinario 1
+    n: 521
+  --- fila 23 ---
+    yyyymm: 2025-12
+    record_type: Fase Extraordinario 2
+    n: 667
+  --- fila 24 ---
+    yyyymm: 2025-12
+    record_type: Fase Final
+    n: 8361
+  --- fila 25 ---
+    yyyymm: 2025-12
+    record_type: Recuperacion 1
+    n: 1376
+  --- fila 26 ---
+    yyyymm: 2025-12
+    record_type: Recuperacion 2
+    n: 741
+  --- fila 27 ---
+    yyyymm: 2025-11
+    record_type: Fase 1
+    n: 9
+  --- fila 28 ---
+    yyyymm: 2025-11
+    record_type: Fase 2
+    n: 4
+  --- fila 29 ---
+    yyyymm: 2025-11
+    record_type: Fase Final
+    n: 3
+  --- fila 30 ---
+    yyyymm: 2025-11
+    record_type: Recuperacion 1
+    n: 2
+  --- fila 31 ---
+    yyyymm: 2025-10
+    record_type: Fase 1
+    n: 2
+  --- fila 32 ---
+    yyyymm: 2025-10
+    record_type: Fase 2
+    n: 4
+  --- fila 33 ---
+    yyyymm: 2025-10
+    record_type: Fase Final
+    n: 5
+  --- fila 34 ---
+    yyyymm: 2025-10
+    record_type: Recuperacion 2
+    n: 2
+  --- fila 35 ---
+    yyyymm: 2025-09
+    record_type: Fase 1
+    n: 23
+  --- fila 36 ---
+    yyyymm: 2025-09
+    record_type: Fase 2
+    n: 59
+  --- fila 37 ---
+    yyyymm: 2025-09
+    record_type: Fase Extraordinario 1
+    n: 1
+  --- fila 38 ---
+    yyyymm: 2025-09
+    record_type: Fase Extraordinario 2
+    n: 4
+  --- fila 39 ---
+    yyyymm: 2025-09
+    record_type: Fase Final
+    n: 23
+  --- fila 40 ---
+    yyyymm: 2025-09
+    record_type: Recuperacion 1
+    n: 16
+  --- fila 41 ---
+    yyyymm: 2025-09
+    record_type: Recuperacion 2
+    n: 13
+  --- fila 42 ---
+    yyyymm: 2025-08
+    record_type: Fase 1
+    n: 84
+  --- fila 43 ---
+    yyyymm: 2025-08
+    record_type: Fase 2
+    n: 67
+  --- fila 44 ---
+    yyyymm: 2025-08
+    record_type: Fase Extraordinario 1
+    n: 5
+  --- fila 45 ---
+    yyyymm: 2025-08
+    record_type: Fase Extraordinario 2
+    n: 4
+  --- fila 46 ---
+    yyyymm: 2025-08
+    record_type: Fase Final
+    n: 85
+  --- fila 47 ---
+    yyyymm: 2025-08
+    record_type: Recuperacion 1
+    n: 76
+  --- fila 48 ---
+    yyyymm: 2025-08
+    record_type: Recuperacion 2
+    n: 143
+  --- fila 49 ---
+    yyyymm: 2025-07
+    record_type: Fase 1
+    n: 873
+  --- fila 50 ---
+    yyyymm: 2025-07
+    record_type: Fase 2
+    n: 922
+  --- fila 51 ---
+    yyyymm: 2025-07
+    record_type: Fase Extraordinario 1
+    n: 38
+  --- fila 52 ---
+    yyyymm: 2025-07
+    record_type: Fase Extraordinario 2
+    n: 50
+  --- fila 53 ---
+    yyyymm: 2025-07
+    record_type: Fase Final
+    n: 7547
+  --- fila 54 ---
+    yyyymm: 2025-07
+    record_type: Recuperacion 1
+    n: 1573
+  --- fila 55 ---
+    yyyymm: 2025-07
+    record_type: Recuperacion 2
+    n: 749
+  --- fila 56 ---
+    yyyymm: 2025-06
+    record_type: Fase 1
+    n: 545
+  --- fila 57 ---
+    yyyymm: 2025-06
+    record_type: Fase 2
+    n: 4814
+  --- fila 58 ---
+    yyyymm: 2025-06
+    record_type: Fase Extraordinario 1
+    n: 4
+  --- fila 59 ---
+    yyyymm: 2025-06
+    record_type: Fase Extraordinario 2
+    n: 222
+  --- fila 60 ---
+    yyyymm: 2025-06
+    record_type: Fase Final
+    n: 2043
+  --- fila 61 ---
+    yyyymm: 2025-05
+    record_type: Fase 1
+    n: 3858
+  --- fila 62 ---
+    yyyymm: 2025-05
+    record_type: Fase 2
+    n: 4987
+  --- fila 63 ---
+    yyyymm: 2025-05
+    record_type: Fase Extraordinario 1
+    n: 124
+  --- fila 64 ---
+    yyyymm: 2025-04
+    record_type: Fase 1
+    n: 6722
+  --- fila 65 ---
+    yyyymm: 2025-01
+    record_type: Fase 1
+    n: 56
+  --- fila 66 ---
+    yyyymm: 2025-01
+    record_type: Fase 2
+    n: 48
+  --- fila 67 ---
+    yyyymm: 2025-01
+    record_type: Fase Extraordinario 1
+    n: 8
+  --- fila 68 ---
+    yyyymm: 2025-01
+    record_type: Fase Extraordinario 2
+    n: 13
+  --- fila 69 ---
+    yyyymm: 2025-01
+    record_type: Fase Final
+    n: 52
+  --- fila 70 ---
+    yyyymm: 2025-01
+    record_type: Recuperacion 1
+    n: 16
+  --- fila 71 ---
+    yyyymm: 2025-01
+    record_type: Recuperacion 2
+    n: 4
+  --- fila 72 ---
+    yyyymm: 2024-12
+    record_type: Fase 1
+    n: 22
+  --- fila 73 ---
+    yyyymm: 2024-12
+    record_type: Fase 2
+    n: 22
+  --- fila 74 ---
+    yyyymm: 2024-12
+    record_type: Fase Extraordinario 2
+    n: 2
+  --- fila 75 ---
+    yyyymm: 2024-12
+    record_type: Fase Final
+    n: 64
+  --- fila 76 ---
+    yyyymm: 2024-12
+    record_type: Recuperacion 1
+    n: 14
+  --- fila 77 ---
+    yyyymm: 2024-12
+    record_type: Recuperacion 2
+    n: 1
+  --- fila 78 ---
+    yyyymm: 2024-11
+    record_type: Fase 1
+    n: 43
+  --- fila 79 ---
+    yyyymm: 2024-11
+    record_type: Fase 2
+    n: 35
+  --- fila 80 ---
+    yyyymm: 2024-11
+    record_type: Fase Extraordinario 1
+    n: 3
+  --- fila 81 ---
+    yyyymm: 2024-11
+    record_type: Fase Extraordinario 2
+    n: 1
+  --- fila 82 ---
+    yyyymm: 2024-11
+    record_type: Fase Final
+    n: 1
+  --- fila 83 ---
+    yyyymm: 2024-10
+    record_type: Fase 1
+    n: 7
+  --- fila 84 ---
+    yyyymm: 2024-10
+    record_type: Fase 2
+    n: 1
+
+================================================================================
+10) is_verified / is_rejected: distribucion de estados
+================================================================================
+SQL:
+SELECT is_verified, is_rejected, COUNT(*) AS n
+FROM crs_record
+GROUP BY is_verified, is_rejected
+ORDER BY n DESC;
+
+RESULTADO:
+SQL (141) Executed (default): SELECT is_verified, is_rejected, COUNT(*) AS n
+FROM crs_record
+GROUP BY is_verified, is_rejected
+ORDER BY n DESC;
+  (2 filas)
+  --- fila 1 ---
+    is_verified: NULL
+    is_rejected: NULL
+    n: 52424
+  --- fila 2 ---
+    is_verified: 0
+    is_rejected: 0
+    n: 9195
