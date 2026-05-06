@@ -14,6 +14,7 @@ var seasonFilter = ":season_id";
 var branchFilter = ":branch_id";
 var careerFilter = ":career_id";
 var cycleFilter = ":studying_cycle_id";
+var studyingTimeFilter = ":studying_time_id";
 var professorFilter = ":professor_id";
 var typeFilter = ":record_type";
 var statusFilter = ":record_status";
@@ -105,6 +106,7 @@ function isSDEValue(value) {
 function isValidStudentForActa(studentEntry, recordType, recordStages) {
   if (!studentEntry) return false;
 
+  var normalizedType = normalizeRecordType(recordType);
   var phase = getValidationPhase(recordType);
   var studentStages = Array.isArray(studentEntry.stages) ? studentEntry.stages : [];
   if (!studentStages.length) return false;
@@ -123,6 +125,18 @@ function isValidStudentForActa(studentEntry, recordType, recordStages) {
     // Validar que Fase Final - Examen tenga valor numérico
     var finalExamValue = getStageValue(studentStages, "Fase Final - Examen");
     return isNumericValue(finalExamValue);
+  }
+
+  if (normalizedType === "Fase Extraordinario 1") {
+    // Extraordinario 1 sustituye únicamente el examen de Fase 1
+    var fase1ExamValue = getStageValue(studentStages, "Fase 1 - Examen");
+    return isNumericValue(fase1ExamValue);
+  }
+
+  if (normalizedType === "Fase Extraordinario 2") {
+    // Extraordinario 2 sustituye únicamente el examen de Fase 2
+    var fase2ExamValue = getStageValue(studentStages, "Fase 2 - Examen");
+    return isNumericValue(fase2ExamValue);
   }
 
   if (phase === "Fase 1" || phase === "Fase 2" || phase === "Fase Final") {
@@ -184,6 +198,11 @@ if (careerFilter !== "") {
 if (professorFilter !== "") {
   var professorArr = professorFilter.split(",");
   recordWhere.professor_id = professorArr.length === 1 ? professorArr[0] : { [models.Sequelize.Op.in]: professorArr };
+}
+
+if (studyingTimeFilter !== "") {
+  var studyingTimeArr = studyingTimeFilter.split(",");
+  recordWhere.studying_time_id = studyingTimeArr.length === 1 ? studyingTimeArr[0] : { [models.Sequelize.Op.in]: studyingTimeArr };
 }
 
 if (dateFromFilter !== "" && dateToFilter !== "") {
@@ -269,8 +288,9 @@ models.crs_record.findAll({
 
   var dedupMap = {};
   jsonRecords.forEach(function(record) {
-    var rawType = String(record.record_type || "").trim();
-    var dedupKey = record.section_id + "|" + rawType;
+    var normalizedTypeForDedup = normalizeRecordType(record.record_type);
+    var dedupTypeKey = normalizedTypeForDedup || String(record.record_type || "").trim();
+    var dedupKey = record.section_id + "|" + dedupTypeKey;
     var currentRank = Number(record.record_correction_number || 0);
     var currentDate = record.create_date ? new Date(record.create_date).getTime() : 0;
 
@@ -355,7 +375,7 @@ models.crs_record.findAll({
       ciclo: ciclo,
       jornada: jornada,
       curso: curso,
-      fase: record.record_type || "N/A",
+      fase: normalizedType || record.record_type || "N/A",
       seccion: seccion,
       aula: aula,
       periodo: periodo,
@@ -371,9 +391,13 @@ models.crs_record.findAll({
     });
   });
 
-  if (statusFilter === "nsp" || statusFilter === "con_nota") {
+  if (statusFilter === "con_nota") {
     rows = rows.filter(function(row) {
-      return row.cant_alumnos > 0;
+      return row.se_paga === "Sí";
+    });
+  } else if (statusFilter === "nsp") {
+    rows = rows.filter(function(row) {
+      return row.se_paga === "No";
     });
   }
 
