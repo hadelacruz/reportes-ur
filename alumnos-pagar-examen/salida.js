@@ -7,12 +7,16 @@
 	},
 	watch: {
 		result: function(newVal) {
-			this.renderTable(newVal);
+			this.loading = true;
+			this.$nextTick(() => {
+				this.renderTable(newVal);
+			});
 		}
 	},
 	methods: {
 		renderTable: function(dataArray) {
 			let vm = this;
+			vm.loading = true;
 
 			if (window.jQuery.fn.DataTable.isDataTable(vm.$refs.notes_table)) {
 				window.jQuery(vm.$refs.notes_table).DataTable().destroy();
@@ -60,8 +64,11 @@
 		}
 	},
 	mounted: function() {
-		if (this.result && this.result.length > 0) {
-			this.renderTable(this.result);
+		if (this.result && Array.isArray(this.result) && this.result.length > 0) {
+			this.loading = true;
+			this.$nextTick(() => {
+				this.renderTable(this.result);
+			});
 		} else {
 			this.loading = false;
 		}

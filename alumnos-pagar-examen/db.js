@@ -16,7 +16,7 @@
 		let classroomRequired = false;
 
 		if (studentCardFilter !== "") {
-			whereStudent.student_id_card = { [Op.like]: "%" + studentCardFilter + "%" };
+			whereStudent.student_id_card = { [Op.eq]: studentCardFilter };
 		}
 
 		if (professorFilter !== "") {
@@ -28,7 +28,7 @@
 		}
 
 		if (classroomFilter !== "") {
-			classroomWhere.name = { [Op.like]: "%" + classroomFilter + "%" };
+			classroomWhere.name = { [Op.eq]: classroomFilter };
 			classroomRequired = true;
 		}
 
