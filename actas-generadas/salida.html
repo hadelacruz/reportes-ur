@@ -16,7 +16,7 @@
                 <thead class="ui inverted grey table">
                     <tr>
                         <th>Sede</th><th>Carrera</th><th>Ciclo</th><th>Jornada</th><th>Curso</th>
-                        <th>Fase</th><th>Sección</th><th>Aula/Sección</th><th>Período</th>
+                        <th>Fase</th><th>Aula/Sección</th><th>Período</th>
                         <th>Docente</th><th>NIT</th><th>Fecha Generación</th>
                         <th>Se Paga</th><th>Actas</th><th>Alumnos que cumplen</th><th>Total Alumnos</th>
                     </tr>
@@ -24,7 +24,7 @@
                 <tbody><tr v-for="(row, idx) in result" :key="idx">
                     <td>{{ row.sede }}</td><td>{{ row.carrera }}</td><td>{{ row.ciclo }}</td>
                     <td>{{ row.jornada }}</td><td>{{ row.curso }}</td><td>{{ row.fase }}</td>
-                    <td>{{ row.seccion }}</td><td>{{ row.aula }}</td><td>{{ row.periodo }}</td>
+                    <td>{{ row.aula }}</td><td>{{ row.periodo }}</td>
                     <td>{{ row.docente }}</td><td>{{ row.nit }}</td><td>{{ row.fecha_fmt }}</td>
                     <td><strong>{{ row.se_paga }}</strong></td><td>{{ row.cant_actas }}</td><td>{{ row.cant_alumnos }}</td><td>{{ row.cant_alumnos_total }}</td>
                 </tr></tbody>
