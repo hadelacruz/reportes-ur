@@ -1,0 +1,31 @@
+<style>
+	[v-cloak] { display: none !important; }
+</style>
+<div class="ui segment" v-cloak>
+	<div v-if="loading" class="ui active inverted dimmer">
+		<div class="ui large text loader">Cargando...</div>
+	</div>
+	<div class="ui top attached tabular menu">
+		<a class="item active" data-tab="first">Alumnos que deben pagar examen</a>
+	</div>
+	<div class="ui bottom attached tab segment active" data-tab="first" style="overflow-x: auto;">
+		<table class="ui very compact selectable celled striped table" ref="notes_table" style="min-width: 100%;">
+			<thead class="ui inverted grey table">
+				<tr>
+					<th>Sede</th>
+					<th>Carné</th>
+					<th>Alumno</th>
+					<th>Curso</th>
+					<th>Profesor</th>
+					<th>Aula</th>
+					<th>Periodo</th>
+					<th>Extraordinario 1</th>
+					<th>Extraordinario 2</th>
+					<th>Recuperación 1</th>
+					<th>Recuperación 2</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	</div>
+</div>
