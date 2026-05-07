@@ -9,6 +9,7 @@ models.crs_assignation_section.belongsTo(models.crs_assignation_season, { foreig
 models.crs_assignation_section.belongsTo(models.std_branch, { foreignKey: "branch_id" });
 models.crs_assignation_section.belongsTo(models.crs_assignation_classroom, { foreignKey: "classroom_id" });
 models.crs_assignation_season.belongsTo(models.std_period, { foreignKey: "period_id" });
+models.crs_assignation_classroom.belongsTo(models.std_branch, { foreignKey: "branch_id" });
 
 var seasonFilter = ":season_id";
 var branchFilter = ":branch_id";
@@ -185,11 +186,6 @@ if (cycleFilter !== "") {
   sectionWhere.studying_cycle_id = cycleArr.length === 1 ? cycleArr[0] : { [models.Sequelize.Op.in]: cycleArr };
 }
 
-if (branchFilter !== "") {
-  var branchArrWhere = branchFilter.split(",");
-  recordWhere.branch_id = branchArrWhere.length === 1 ? branchArrWhere[0] : { [models.Sequelize.Op.in]: branchArrWhere };
-}
-
 if (careerFilter !== "") {
   var careerArr = careerFilter.split(",");
   recordWhere.career_id = careerArr.length === 1 ? careerArr[0] : { [models.Sequelize.Op.in]: careerArr };
@@ -217,11 +213,20 @@ if (dateFromFilter !== "" && dateToFilter !== "") {
 
 var classroomInclude = {
   model: models.crs_assignation_classroom,
-  attributes: ["name", "classroom_id"]
+  attributes: ["name", "classroom_id", "branch_id"],
+  include: [
+    { model: models.std_branch, attributes: ["name", "branch_id"] }
+  ]
 };
 if (classroomFilter !== "") {
   classroomInclude.required = true;
   classroomInclude.where = { name: { [models.Sequelize.Op.like]: "%" + classroomFilter + "%" } };
+}
+if (branchFilter !== "") {
+  var branchArrWhere = branchFilter.split(",");
+  classroomInclude.required = true;
+  classroomInclude.where = classroomInclude.where || {};
+  classroomInclude.where.branch_id = branchArrWhere.length === 1 ? branchArrWhere[0] : { [models.Sequelize.Op.in]: branchArrWhere };
 }
 
 models.crs_record.findAll({
@@ -339,7 +344,6 @@ models.crs_record.findAll({
     var se_paga = totalAlumnosValidos > 0 ? "Sí" : "No";
 
     var section = record.crs_assignation_section || {};
-    var branch = record.std_branch || section.std_branch || {};
     var career = record.std_career || {};
     var course = record.crs_course || section.crs_course || {};
     var professor = record.pfs_professor || {};
@@ -358,8 +362,11 @@ models.crs_record.findAll({
       } catch (error) {}
     }
 
-    var sede = branch.name || "N/A";
-    var sede_branch_id = branch.branch_id || record.branch_id || null;
+    var classroomBranch = classroom.std_branch || {};
+    var sectionBranch = section.std_branch || {};
+    var recordBranch = record.std_branch || {};
+    var sede = classroomBranch.name || sectionBranch.name || recordBranch.name || "N/A";
+    var sede_branch_id = classroom.branch_id || section.branch_id || record.branch_id || null;
     var carreraName = career.name || "N/A";
     var ciclo = section.std_studying_cycle ? section.std_studying_cycle.name : "N/A";
     var jornada = studyingTime.name || "N/A";
