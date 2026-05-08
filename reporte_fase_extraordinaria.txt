@@ -1,0 +1,276 @@
+================================================================================
+CÓMO FUNCIONAN LAS FASES EXTRAORDINARIAS
+   ¿Qué alumnos aplican al Extraordinario 1 / Extraordinario 2?
+Generado: 2026-05-07
+================================================================================
+
+
+--------------------------------------------------------------------------------
+1) RESUMEN EJECUTIVO (TL;DR)
+--------------------------------------------------------------------------------
+
+  El "Extraordinario" NO es una fase con datos propios en la BD.
+  Es un OVERRIDE de la fase base (Fase 1 o Fase 2).
+
+  Un alumno aplica al Extraordinario de FaseN cuando:
+    1. En su crs_score.setup, dentro de los items de "Fase N",
+       el item con name = "NSP" tiene nsp = true.
+    2. La sección tiene la fase extraordinaria habilitada
+       (flag phase_one_ex / phase_two_ex en la config del módulo).
+    3. El alumno no está dado de baja (std_student.status_code <> 'D' y <> 'B').
+
+  El alumno se considera "ya rindió / resuelto" si en la fase base:
+    - El item Examen tiene un score (la nota del extraordinario sobrescribe a la
+      del examen original), O BIEN
+    - El item NSP tiene además la marca extransp = true.
+
+
+
+--------------------------------------------------------------------------------
+2) EL MODELO DE DATOS
+--------------------------------------------------------------------------------
+
+La tabla crs_score guarda la nota de un alumno en una sección:
+
+  crs_score (
+    score_id    BIGINT  PK,
+    student_id  BIGINT  -> std_student.student_id,
+    section_id  BIGINT  -> crs_assignation_section.section_id,
+    setup       TEXT    -- JSON array (ver abajo)
+  )
+
+El campo `setup` es un ARRAY JSON. Cada item describe UN componente de UNA fase.
+
+Forma de un item de fase regular (Fase 1 / Fase 2 / Fase Final):
+
+  {
+    "stage":      "Fase 1",                   -- nombre humano de la fase
+    "name":       "Zona" | "Examen" | "NSP" | "SDE",
+    "phase_uuid": "uuid-común-a-toda-la-fase",
+    "score":      <numero | string>           -- solo si name = Zona o Examen
+    "nsp":        <boolean>                   -- solo si name = NSP
+    "sde":        <boolean>                   -- solo si name = SDE
+    "extransp":   <boolean, opcional>         -- solo en el item NSP, ver abajo
+  }
+
+Forma de un item de Recuperación (Recuperacion1 / Recuperacion2):
+
+  {
+    "stage":     "Recuperacion1",             -- mismo string en stage y name
+    "name":      "Recuperacion1",
+    "weighting": "40",
+    "score":     <numero | string>            -- nota sacada en la recu
+    "nsp":       <boolean>                    -- si no se presentó
+  }
+
+NO existe ningún item con stage = "Extraordinario1" ni "Extraordinario2".
+La fase extraordinaria se manifiesta como modificaciones a los items de
+la FASE BASE (Fase 1 o Fase 2):
+
+  - Si el alumno saca nota en el extraordinario:
+      el "Examen.score" de la fase base SE SOBRESCRIBE con la nota nueva.
+
+  - Si el alumno no se presenta (o queda excusado) y el catedrático cierra:
+      al item "NSP" de la fase base se le agrega "extransp": true.
+
+  Ejemplo real (de modul_dev, score_id=72, Fase 2):
+      { "stage": "Fase 2", "name": "NSP", "nsp": true, "extransp": true,
+        "phase_uuid": "1ed87f40-..." }
+
+
+
+--------------------------------------------------------------------------------
+3) LÓGICA DE NEGOCIO (CON REFERENCIAS AL CÓDIGO)
+--------------------------------------------------------------------------------
+
+3.1  Habilitación a nivel SECCIÓN (config del módulo)
+------------------------------------------------------
+
+Archivo: client/src/modules/course_scoring/IndexNetworth.vue
+
+Líneas 232-303 — el módulo lee dos flags de la configuración del módulo del
+catedrático:
+
+  data() {
+    return {
+      ...
+      phase_one_ex: false,     // ¿está habilitada Fase 1 Extraordinaria?
+      ...
+      phase_two_ex: false,     // ¿está habilitada Fase 2 Extraordinaria?
+      ...
+    }
+  }
+
+  // En el load:
+  vm.phase_one_ex = !!moduleConfiguration.phase_one_ex;
+  vm.phase_two_ex = !!moduleConfiguration.phase_two_ex;
+
+Sin estos flags activos, los botones de Fase 1/2 Extraordinaria no aparecen
+para esa sección.
+
+
+3.2  Lectura de las "flags" de un alumno en una fase
+----------------------------------------------------
+
+Archivo: client/src/modules/course_scoring/IndexNetworth.vue
+Líneas 470-484:
+
+  getFlagsFromPhaseItems(phaseItems) {
+    // Busca NSP/SDE y si se marcó extransp en la extraordinaria
+    const nspItem = phaseItems.find(i => (i.name || "").toLowerCase() === "nsp");
+    const sdeItem = phaseItems.find(i => (i.name || "").toLowerCase() === "sde");
+    const nsp = !!nspItem?.nsp;
+    const sde = !!sdeItem?.sde;
+    // extransp puede venir en el mismo item de NSP de la fase base
+    const extransp =
+      nspItem && (nspItem.extransp === true || nspItem.extransp === "true");
+    return { nsp, sde, extransp };
+  }
+
+Tres flags posibles para una fase: nsp, sde, extransp.
+
+
+3.3  Decisión "este alumno aplica al Extraordinario y todavía no rindió"
+------------------------------------------------------------------------
+
+Archivo: client/src/modules/course_scoring/IndexNetworth.vue
+Líneas 616-641 (dentro de computePendingsForSection):
+
+  // ---------- EXTRAS ----------
+  if ((phaseKey === "fase1" && vm.phase_one_ex) ||
+      (phaseKey === "fase2" && vm.phase_two_ex))
+  {
+    let extraPend = 0;
+    for (const asg of students) {
+      const sid = asg?.std_student?.student_id;
+      const sc  = (currentScores || []).find(s => s.student_id === sid);
+      const setup = sc?.setup || [];
+      const phaseItems = vm.getPhaseItems(setup, mp, stageName);
+      const { nsp, extransp } = vm.getFlagsFromPhaseItems(phaseItems);
+      const isStudentDorB =
+        asg?.std_student?.status_code === "D" ||
+        asg?.std_student?.status_code === "B";
+
+      if (nsp) {
+        // si hubo extra con nota, ya está sobrescrito en Examen
+        const examScore = vm.getTaskScore(phaseItems, "Examen");
+        const extraSatisfied = examScore !== null || extransp === true;
+        if (!extraSatisfied && !isStudentDorB) extraPend += 1;
+      }
+    }
+    if (phaseKey === "fase1") counts.fase1extra = extraPend;
+    if (phaseKey === "fase2") counts.fase2extra = extraPend;
+  }
+
+Esa es LA lógica. Léela como una checklist:
+
+  Para cada alumno de la sección:
+    SI la sección tiene la fase extra habilitada (phase_one_ex / phase_two_ex)
+      Y SI el alumno tiene nsp = true en la fase base
+      Y SI NO se ha satisfecho aún (no hay nota de examen ni extransp)
+      Y SI el alumno NO está de baja (status_code ∉ {D, B})
+    ENTONCES el alumno está PENDIENTE de Extraordinario para esa fase.
+
+
+
+--------------------------------------------------------------------------------
+4) ESTADOS POSIBLES DE UN ALUMNO RESPECTO AL EXTRAORDINARIO
+--------------------------------------------------------------------------------
+
+Para cada Fase base N (1 o 2), el alumno puede estar en uno de estos estados:
+
+  ┌──────────────────┬──────────────┬───────────────┬──────────────────┐
+  │ Estado           │ FaseN.NSP    │ FaseN.Examen  │ FaseN.NSP        │
+  │                  │ (item nsp)   │ (item score)  │ (item extransp)  │
+  ├──────────────────┼──────────────┼───────────────┼──────────────────┤
+  │ NO APLICA        │ false        │ —             │ —                │
+  │   (rindió la     │              │               │                  │
+  │    fase normal)  │              │               │                  │
+  ├──────────────────┼──────────────┼───────────────┼──────────────────┤
+  │ APLICA Y         │ true         │ null/vacío    │ ausente o false  │
+  │ PENDIENTE        │              │               │                  │
+  │   (debe rendir)  │              │               │                  │
+  ├──────────────────┼──────────────┼───────────────┼──────────────────┤
+  │ APLICÓ Y RINDIÓ  │ true         │ <numero>      │ —                │
+  │   (sacó nota)    │              │               │                  │
+  ├──────────────────┼──────────────┼───────────────┼──────────────────┤
+  │ APLICÓ Y CERRADO │ true         │ —             │ true             │
+  │ SIN NOTA         │              │               │                  │
+  │   (extransp)     │              │               │                  │
+  └──────────────────┴──────────────┴───────────────┴──────────────────┘
+
+
+
+--------------------------------------------------------------------------------
+5) IDENTIFICARLO DESDE SQL
+--------------------------------------------------------------------------------
+
+Lista de alumnos pendientes de Extraordinario  (MySQL 8+, requiere JSON_TABLE)
+
+WITH score_phases AS (
+  SELECT
+    sc.score_id,
+    sc.student_id,
+    sc.section_id,
+    MAX(CASE WHEN jt.stage = 'Fase 1' AND jt.name = 'NSP'    THEN jt.nsp END)        AS f1_nsp,
+    MAX(CASE WHEN jt.stage = 'Fase 1' AND jt.name = 'NSP'    THEN jt.extransp END)   AS f1_extransp,
+    MAX(CASE WHEN jt.stage = 'Fase 1' AND jt.name = 'Examen' THEN jt.score END)      AS f1_examen,
+    MAX(CASE WHEN jt.stage = 'Fase 2' AND jt.name = 'NSP'    THEN jt.nsp END)        AS f2_nsp,
+    MAX(CASE WHEN jt.stage = 'Fase 2' AND jt.name = 'NSP'    THEN jt.extransp END)   AS f2_extransp,
+    MAX(CASE WHEN jt.stage = 'Fase 2' AND jt.name = 'Examen' THEN jt.score END)      AS f2_examen
+  FROM crs_score sc
+  JOIN JSON_TABLE(
+    sc.setup, '$[*]'
+    COLUMNS (
+      stage     VARCHAR(50)  PATH '$.stage',
+      name      VARCHAR(50)  PATH '$.name',
+      score     VARCHAR(20)  PATH '$.score',
+      nsp       BOOLEAN      PATH '$.nsp',
+      extransp  BOOLEAN      PATH '$.extransp'
+    )
+  ) jt
+  GROUP BY sc.score_id, sc.student_id, sc.section_id
+)
+SELECT
+  sn.name                                      AS periodo,
+  c.name                                       AS curso,
+  sec.section_id,
+  st.student_id_card                           AS carne,
+  st.name                                      AS alumno,
+  CASE WHEN p.f1_nsp = TRUE
+            AND COALESCE(p.f1_extransp, FALSE) <> TRUE
+            AND (p.f1_examen IS NULL OR p.f1_examen = '' OR p.f1_examen = 'null')
+       THEN 'PENDIENTE' END                    AS extra_fase1,
+  CASE WHEN p.f2_nsp = TRUE
+            AND COALESCE(p.f2_extransp, FALSE) <> TRUE
+            AND (p.f2_examen IS NULL OR p.f2_examen = '' OR p.f2_examen = 'null')
+       THEN 'PENDIENTE' END                    AS extra_fase2
+FROM score_phases p
+INNER JOIN std_student              st  ON st.student_id  = p.student_id
+INNER JOIN crs_assignation_section  sec ON sec.section_id = p.section_id
+INNER JOIN crs_course               c   ON c.course_id    = sec.course_id
+INNER JOIN crs_assignation_season   sn  ON sn.season_id   = sec.season_id
+WHERE st.status_code NOT IN ('D', 'B')
+  AND sn.season_id = 14                                -- ← reemplazar por el id del periodo
+  -- AND sec.section_id = 11695                        -- ← opcional: limitar a una sección
+HAVING extra_fase1 IS NOT NULL OR extra_fase2 IS NOT NULL
+ORDER BY periodo, curso, sec.section_id, alumno;
+
+
+Notas de uso del query
+----------------------
+
+- Reemplazar `sn.season_id = 14` por el id del periodo a evaluar.
+- Para limitar a una sección o curso, agregar:
+    AND sec.section_id = <id>      -- una sola sección
+    AND c.course_id    = <id>      -- todas las secciones del curso
+
+- El query no chequea phase_one_ex / phase_two_ex (esos viven en la config
+  del módulo del catedrático, no en BD). Si se quiere respetar la
+  habilitación a nivel sección, hay que filtrar manualmente las secciones
+  que sí tienen las fases extras habilitadas.
+
+
+================================================================================
+FIN
+================================================================================

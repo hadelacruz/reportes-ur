@@ -61,6 +61,10 @@
 				.replace(/\s+/g, "");
 		}
 
+		function normalizeItemName(value) {
+			return stripAccents(value).replace(/[^a-z0-9]/g, "");
+		}
+
 		function normalizeStageName(stage) {
 			const clean = stripAccents(stage);
 			if (!clean) return "";
@@ -68,7 +72,23 @@
 			if (/recuperacion2/.test(clean)) return "Recuperacion2";
 			if (/extraordinario1/.test(clean)) return "Extraordinario1";
 			if (/extraordinario2/.test(clean)) return "Extraordinario2";
+			if (/^fase1$/.test(clean) || /^fase\s*1$/.test(clean)) return "Fase 1";
+			if (/^fase2$/.test(clean) || /^fase\s*2$/.test(clean)) return "Fase 2";
 			return clean;
+		}
+
+		function isTruthy(value) {
+			return value === true || value === "true" || value === 1 || value === "1";
+		}
+
+		function getStageItems(scoreSetup, stageLabel) {
+			const normalizedStage = normalizeStageName(stageLabel);
+			return scoreSetup.filter(item => normalizeStageName(item && item.stage) === normalizedStage);
+		}
+
+		function getStageItemByName(stageItems, targetName) {
+			const normalizedTarget = normalizeItemName(targetName);
+			return stageItems.find(item => normalizeItemName(item && item.name) === normalizedTarget);
 		}
 
 		function hasNumericScore(value) {
@@ -93,6 +113,27 @@
 
 			const rawItem = stageItems.find(item => item && item.score !== null && item.score !== undefined && String(item.score).trim() !== "");
 			if (rawItem) return String(rawItem.score).trim();
+
+			return "NA";
+		}
+
+		function getExtraordinaryStageValue(scoreSetup, phaseLabel) {
+			const phaseItems = getStageItems(scoreSetup, phaseLabel);
+			if (phaseItems.length === 0) return "NA";
+
+			const nspItem = getStageItemByName(phaseItems, "NSP");
+			const examItem = getStageItemByName(phaseItems, "Examen");
+			const sdeItem = getStageItemByName(phaseItems, "SDE");
+
+			const extraordinaryNsp = nspItem && isTruthy(nspItem.nsp);
+			const examScore = examItem && examItem.score;
+
+			if (extraordinaryNsp) {
+				if (hasNumericScore(examScore)) return String(examScore).trim();
+				if (sdeItem && isTruthy(sdeItem.sde)) return "SDE";
+				if (isTruthy(nspItem.extransp)) return "NSP";
+				return "NSP";
+			}
 
 			return "NA";
 		}
@@ -165,6 +206,10 @@
 
 		let result = assignations.map(row => {
 			const student = row.std_student || {};
+			if (student.status_code === "D" || student.status_code === "B") {
+				return null;
+			}
+
 			const section = row.crs_assignation_section || {};
 			const course = section.crs_course || {};
 			const professor = section.pfs_professor || {};
@@ -188,12 +233,12 @@
 				profesor: parseProfessorName(professor.setup),
 				aula: classroom.name || "N/A",
 				periodo: period.name || "N/A",
-				extraordinario_1: getSpecialStageValue(scoreSetup, "Extraordinario1"),
-				extraordinario_2: getSpecialStageValue(scoreSetup, "Extraordinario2"),
+				extraordinario_1: getExtraordinaryStageValue(scoreSetup, "Fase 1"),
+				extraordinario_2: getExtraordinaryStageValue(scoreSetup, "Fase 2"),
 				recuperacion_1: getSpecialStageValue(scoreSetup, "Recuperacion1"),
 				recuperacion_2: getSpecialStageValue(scoreSetup, "Recuperacion2")
 			};
-		});
+		}).filter(Boolean);
 
 		if (branchFilter !== "") {
 			const branchIds = branchFilter.split(",").map(value => String(value).trim()).filter(Boolean);
