@@ -39,6 +39,7 @@
 		models.crs_assignation_section.belongsTo(models.crs_assignation_classroom, { foreignKey: "classroom_id" });
 		models.crs_assignation_section.belongsTo(models.crs_assignation_season, { foreignKey: "season_id" });
 		models.crs_assignation_section.belongsTo(models.crs_course, { foreignKey: "course_id" });
+		models.crs_assignation_section.belongsTo(models.pfs_professor, { foreignKey: "professor_id" });
 		models.crs_assignation_season.belongsTo(models.std_period, { foreignKey: "period_id" });
 		models.crs_assignation_classroom.belongsTo(models.std_branch, { foreignKey: "branch_id" });
 
@@ -51,7 +52,7 @@
 				{ model: models.std_studying_time, attributes: ["name"], required: false },
 				{
 					model: models.crs_assignation_section,
-					attributes: ["section_id", "name", "season_id", "classroom_id", "course_id"],
+					attributes: ["section_id", "name", "season_id", "classroom_id", "course_id", "professor_id"],
 					required: true,
 					where: whereSection,
 					include: [
@@ -77,6 +78,11 @@
 							model: models.crs_course,
 							attributes: ["course_id", "name"],
 							required: false
+						},
+						{
+							model: models.pfs_professor,
+							attributes: ["setup"],
+							required: false
 						}
 					]
 				}
@@ -97,6 +103,8 @@
 			const career = pre.std_career;
 			const studyingCycle = pre.std_studying_cycle;
 			const studyingTime = pre.std_studying_time;
+			const professor = section && section.pfs_professor;
+			
 			if (!classroom || !course || !period || !student) return;
 
 			const classroomId = classroom.classroom_id || null;
@@ -112,6 +120,17 @@
 			const studyingTimeName = (studyingTime && studyingTime.name) || "Sin jornada";
 			const studentName = student.name || "Sin nombre";
 			const studentCard = student.student_id_card || "";
+			let professorSetup = null;
+			if (professor && professor.setup) {
+				try {
+					professorSetup = typeof professor.setup === "string" ? JSON.parse(professor.setup) : professor.setup;
+				} catch (error) {
+					professorSetup = null;
+				}
+			}
+			const professorName = professorSetup
+				? ((professorSetup.name || "") + " " + (professorSetup.lastname || "")).trim() || "Sin catedrático"
+				: "Sin catedrático";
 
 			const groupKey = [classroomId || "", courseId || "", branchId || "", periodId || ""].join("|");
 
@@ -122,6 +141,7 @@
 				Aula: classroomName,
 				Curso: courseName,
 				Carrera: careerName,
+				"Nombre de catedrático": professorName,
 				"Ciclo de estudio": studyingCycleName,
 				Jornada: studyingTimeName,
 				Periodo: periodName
@@ -133,6 +153,9 @@
 					Curso: courseName,
 					Sede: branchName,
 					Periodo: periodName,
+					"Nombre de catedrático": professorName,
+					"Ciclo de estudio": studyingCycleName,
+					Jornada: studyingTimeName,
 					studentIds: new Set()
 				});
 			}
@@ -154,8 +177,11 @@
 			Aula: item.Aula,
 			Curso: item.Curso,
 			Sede: item.Sede,
-			Periodo: item.Periodo,
-			"Total alumnos": item.studentIds.size
+			"Total alumnos": item.studentIds.size,
+			"Nombre de catedrático": item["Nombre de catedrático"],
+			"Ciclo de estudio": item["Ciclo de estudio"],
+			Jornada: item.Jornada,
+			Periodo: item.Periodo
 		})).sort((left, right) => {
 			const sedeCompare = String(left.Sede).localeCompare(String(right.Sede), "es");
 			if (sedeCompare !== 0) return sedeCompare;

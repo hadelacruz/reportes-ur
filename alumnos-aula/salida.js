@@ -44,11 +44,12 @@
 
 				vm.buildDataTable(vm.$refs.detail_table, details, [
 					{ title: "Sede", data: "Sede", defaultContent: "" },
-					{ title: "Nombre del alumno", data: "Nombre del alumno", defaultContent: "" },
 					{ title: "Carné", data: "Carné", defaultContent: "" },
+					{ title: "Nombre del alumno", data: "Nombre del alumno", defaultContent: "" },
 					{ title: "Aula", data: "Aula", defaultContent: "" },
-					{ title: "Curso", data: "Curso", defaultContent: "" },
 					{ title: "Carrera", data: "Carrera", defaultContent: "" },
+					{ title: "Curso", data: "Curso", defaultContent: "" },
+					{ title: "Catedrático", data: "Nombre de catedrático", defaultContent: "" },
 					{ title: "Ciclo de estudio", data: "Ciclo de estudio", defaultContent: "" },
 					{ title: "Jornada", data: "Jornada", defaultContent: "" },
 					{ title: "Periodo", data: "Periodo", defaultContent: "" }
@@ -58,10 +59,13 @@
 					{ title: "Sede", data: "Sede", defaultContent: "" },
 					{ title: "Aula", data: "Aula", defaultContent: "" },
 					{ title: "Curso", data: "Curso", defaultContent: "" },
-					{ title: "Periodo", data: "Periodo", defaultContent: "" },
-					{ title: "Total alumnos", data: "Total alumnos", defaultContent: 0 }
+					{ title: "Total alumnos", data: "Total alumnos", defaultContent: 0 },
+					{ title: "Catedrático", data: "Nombre de catedrático", defaultContent: "" },
+					{ title: "Ciclo de estudio", data: "Ciclo de estudio", defaultContent: "" },
+					{ title: "Jornada", data: "Jornada", defaultContent: "" },
+					{ title: "Periodo", data: "Periodo", defaultContent: "" }
 				]);
-
+				
 				vm.loading = false;
 		}
 	},
