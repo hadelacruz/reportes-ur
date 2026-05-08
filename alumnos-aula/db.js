@@ -24,6 +24,18 @@
 			whereSectionSeason.period_id = { [Op.in]: d.period.split(",") };
 		}
 
+		if (d.studying_cycle) {
+			wherePre.studying_cycle_id = { [Op.in]: d.studying_cycle.split(",") };
+		}
+
+		if (d.course) {
+			whereSection.course_id = { [Op.in]: d.course.split(",") };
+		}
+
+		if (d.professor) {
+			whereSection.professor_id = { [Op.in]: d.professor.split(",") };
+		}
+
 		if (d.studying_time) {
 			wherePre.studying_time_id = { [Op.in]: d.studying_time.split(",") };
 		}

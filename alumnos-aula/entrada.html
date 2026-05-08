@@ -35,7 +35,34 @@
 		</div>
 	</div>
 	<div class="fields">
-		
+		<div class="six wide field">
+			<label>Ciclo de estudio</label>
+			<div class="ui fluid multiple search selection dropdown" ref="studying_cycle_dropdown">
+				<input type="hidden" name="studying_cycle">
+				<i class="dropdown icon"></i>
+				<div class="default text">Seleccione</div>
+				<div class="menu"></div>
+			</div>
+		</div>
+		<div class="six wide field">
+			<label>Curso</label>
+			<div class="ui fluid multiple search selection dropdown" ref="course_dropdown">
+				<input type="hidden" name="course">
+				<i class="dropdown icon"></i>
+				<div class="default text">Seleccione</div>
+				<div class="menu"></div>
+			</div>
+		</div>
+		<div class="six wide field">
+			<label>Catedrático</label>
+			<div class="ui fluid multiple search selection dropdown" ref="professor_dropdown">
+				<input type="hidden" name="professor">
+				<i class="dropdown icon"></i>
+				<div class="default text">Seleccione</div>
+				<div class="menu"></div>
+			</div>
+		</div>
+	</div>	
 		<div class="five wide field">
 			<label>Buscar</label>
 			<div class="ui blue fluid icon labeled button" @click="submit">
