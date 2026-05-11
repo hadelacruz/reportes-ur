@@ -48,6 +48,7 @@
 					{ title: "Carné", data: "Carné", defaultContent: "" },
 					{ title: "Nombre del alumno", data: "Nombre del alumno", defaultContent: "" },
 					{ title: "Aula", data: "Aula", defaultContent: "" },
+					{ title: "Codigo de Sección", data: "Codigo de Sección", defaultContent: "" },
 					{ title: "Carrera", data: "Carrera", defaultContent: "" },
 					{ title: "Curso", data: "Curso", defaultContent: "" },
 					{ title: "Catedrático", data: "Nombre de catedrático", defaultContent: "" },
@@ -59,6 +60,7 @@
 				vm.buildDataTable(vm.$refs.summary_table, summary, [
 					{ title: "Sede", data: "Sede", defaultContent: "" },
 					{ title: "Aula", data: "Aula", defaultContent: "" },
+					{ title: "Codigo de Sección", data: "Codigo de Sección", defaultContent: "" },
 					{ title: "Curso", data: "Curso", defaultContent: "" },
 					{ title: "Total alumnos", data: "Total alumnos", defaultContent: 0 },
 					{ title: "Catedrático", data: "Nombre de catedrático", defaultContent: "" },

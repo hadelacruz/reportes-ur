@@ -64,7 +64,7 @@
 				{ model: models.std_studying_time, attributes: ["name"], required: false },
 				{
 					model: models.crs_assignation_section,
-					attributes: ["section_id", "name", "season_id", "classroom_id", "course_id", "professor_id"],
+					attributes: ["section_id", "name", "season_id", "classroom_id", "course_id", "professor_id", "setup"],
 					required: true,
 					where: whereSection,
 					include: [
@@ -144,6 +144,16 @@
 				? ((professorSetup.name || "") + " " + (professorSetup.lastname || "")).trim() || "Sin catedrático"
 				: "Sin catedrático";
 
+			let sectionSetup = null;
+			if (section && section.setup) {
+				try {
+					sectionSetup = typeof section.setup === "string" ? JSON.parse(section.setup) : section.setup;
+				} catch (error) {
+					sectionSetup = null;
+				}
+			}
+			const codigoSeccion = (sectionSetup && sectionSetup.code) || "N/A";
+
 			const groupKey = [classroomId || "", courseId || "", branchId || "", periodId || ""].join("|");
 
 			details.push({
@@ -151,6 +161,7 @@
 				"Nombre del alumno": studentName,
 				Carné: studentCard,
 				Aula: classroomName,
+				"Codigo de Sección": codigoSeccion,
 				Curso: courseName,
 				Carrera: careerName,
 				"Nombre de catedrático": professorName,
@@ -164,6 +175,7 @@
 					Aula: classroomName,
 					Curso: courseName,
 					Sede: branchName,
+					"Codigo de Sección": codigoSeccion,
 					Periodo: periodName,
 					"Nombre de catedrático": professorName,
 					"Ciclo de estudio": studyingCycleName,
@@ -189,6 +201,7 @@
 			Aula: item.Aula,
 			Curso: item.Curso,
 			Sede: item.Sede,
+			"Codigo de Sección": item["Codigo de Sección"],
 			"Total alumnos": item.studentIds.size,
 			"Nombre de catedrático": item["Nombre de catedrático"],
 			"Ciclo de estudio": item["Ciclo de estudio"],
