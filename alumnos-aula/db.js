@@ -4,6 +4,7 @@
 
 		const d = req.body.d || {};
 		const clsrmName = (d.clsrmName || "").trim();
+		const sectionCode = (d.sectionCode || "").trim();
 
 		const wherePre = {};
 		const whereSection = {};
@@ -119,6 +120,18 @@
 			
 			if (!classroom || !course || !period || !student) return;
 
+			let sectionSetup = null;
+			if (section && section.setup) {
+				try {
+					sectionSetup = typeof section.setup === "string" ? JSON.parse(section.setup) : section.setup;
+				} catch (error) {
+					sectionSetup = null;
+				}
+			}
+			const codigoSeccionActual = (sectionSetup && sectionSetup.code) || "N/A";
+
+			if (sectionCode && codigoSeccionActual !== sectionCode) return;
+
 			const classroomId = classroom.classroom_id || null;
 			const classroomName = classroom.name || "Sin aula";
 			const courseId = course.course_id || null;
@@ -146,15 +159,7 @@
 				: "Sin catedrático";
 			const profesorCode = (professorSetup && professorSetup.professor_code) || "N/A";
 
-			let sectionSetup = null;
-			if (section && section.setup) {
-				try {
-					sectionSetup = typeof section.setup === "string" ? JSON.parse(section.setup) : section.setup;
-				} catch (error) {
-					sectionSetup = null;
-				}
-			}
-			const codigoSeccion = (sectionSetup && sectionSetup.code) || "N/A";
+			const codigoSeccion = codigoSeccionActual;
 
 			const groupKey = [classroomId || "", careerId || "", courseId || "", branchId || "", periodId || ""].join("|");
 

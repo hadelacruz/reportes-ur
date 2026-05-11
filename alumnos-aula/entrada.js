@@ -9,7 +9,8 @@
 			course: undefined,
 			period: undefined,
 			studying_time: undefined,
-			clsrmName: ""
+			clsrmName: "",
+			sectionCode: ""
 		}
 	},
 methods: {},
