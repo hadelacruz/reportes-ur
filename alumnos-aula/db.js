@@ -128,6 +128,7 @@
 			const periodId = season.period_id || null;
 			const periodName = period.name || "Sin periodo";
 			const careerName = (career && career.name) || "Sin carrera";
+			const careerId = pre.career_id || null;
 			const studyingCycleName = (studyingCycle && studyingCycle.name) || "Sin ciclo de estudio";
 			const studyingTimeName = (studyingTime && studyingTime.name) || "Sin jornada";
 			const studentName = student.name || "Sin nombre";
@@ -143,6 +144,7 @@
 			const professorName = professorSetup
 				? ((professorSetup.name || "") + " " + (professorSetup.lastname || "")).trim() || "Sin catedrático"
 				: "Sin catedrático";
+			const profesorCode = (professorSetup && professorSetup.professor_code) || "N/A";
 
 			let sectionSetup = null;
 			if (section && section.setup) {
@@ -154,7 +156,7 @@
 			}
 			const codigoSeccion = (sectionSetup && sectionSetup.code) || "N/A";
 
-			const groupKey = [classroomId || "", courseId || "", branchId || "", periodId || ""].join("|");
+			const groupKey = [classroomId || "", careerId || "", courseId || "", branchId || "", periodId || ""].join("|");
 
 			details.push({
 				Sede: branchName,
@@ -164,6 +166,7 @@
 				"Codigo de Sección": codigoSeccion,
 				Curso: courseName,
 				Carrera: careerName,
+				"Codigo Catedratico": profesorCode,
 				"Nombre de catedrático": professorName,
 				"Ciclo de estudio": studyingCycleName,
 				Jornada: studyingTimeName,
@@ -174,9 +177,11 @@
 				grouped.set(groupKey, {
 					Aula: classroomName,
 					Curso: courseName,
+					Carrera: careerName,
 					Sede: branchName,
 					"Codigo de Sección": codigoSeccion,
 					Periodo: periodName,
+					"Codigo Catedratico": profesorCode,
 					"Nombre de catedrático": professorName,
 					"Ciclo de estudio": studyingCycleName,
 					Jornada: studyingTimeName,
@@ -199,10 +204,12 @@
 
 		const summary = Array.from(grouped.values()).map(item => ({
 			Aula: item.Aula,
+			Carrera: item.Carrera,
 			Curso: item.Curso,
 			Sede: item.Sede,
 			"Codigo de Sección": item["Codigo de Sección"],
 			"Total alumnos": item.studentIds.size,
+			"Codigo Catedratico": item["Codigo Catedratico"],
 			"Nombre de catedrático": item["Nombre de catedrático"],
 			"Ciclo de estudio": item["Ciclo de estudio"],
 			Jornada: item.Jornada,
@@ -212,6 +219,8 @@
 			if (sedeCompare !== 0) return sedeCompare;
 			const aulaCompare = String(left.Aula).localeCompare(String(right.Aula), "es");
 			if (aulaCompare !== 0) return aulaCompare;
+			const carreraCompare = String(left.Carrera || "").localeCompare(String(right.Carrera || ""), "es");
+			if (carreraCompare !== 0) return carreraCompare;
 			const cursoCompare = String(left.Curso).localeCompare(String(right.Curso), "es");
 			if (cursoCompare !== 0) return cursoCompare;
 			return String(left.Periodo).localeCompare(String(right.Periodo), "es");

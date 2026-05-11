@@ -45,12 +45,13 @@
 
 				vm.buildDataTable(vm.$refs.detail_table, details, [
 					{ title: "Sede", data: "Sede", defaultContent: "" },
+					{ title: "Codigo de Sección", data: "Codigo de Sección", defaultContent: "" },
+					{ title: "Aula", data: "Aula", defaultContent: "" },
 					{ title: "Carné", data: "Carné", defaultContent: "" },
 					{ title: "Nombre del alumno", data: "Nombre del alumno", defaultContent: "" },
-					{ title: "Aula", data: "Aula", defaultContent: "" },
-					{ title: "Codigo de Sección", data: "Codigo de Sección", defaultContent: "" },
 					{ title: "Carrera", data: "Carrera", defaultContent: "" },
 					{ title: "Curso", data: "Curso", defaultContent: "" },
+					{ title: "Codigo Catedratico", data: "Codigo Catedratico", defaultContent: "" },
 					{ title: "Catedrático", data: "Nombre de catedrático", defaultContent: "" },
 					{ title: "Ciclo de estudio", data: "Ciclo de estudio", defaultContent: "" },
 					{ title: "Jornada", data: "Jornada", defaultContent: "" },
@@ -59,10 +60,12 @@
 
 				vm.buildDataTable(vm.$refs.summary_table, summary, [
 					{ title: "Sede", data: "Sede", defaultContent: "" },
-					{ title: "Aula", data: "Aula", defaultContent: "" },
 					{ title: "Codigo de Sección", data: "Codigo de Sección", defaultContent: "" },
+					{ title: "Aula", data: "Aula", defaultContent: "" },
+					{ title: "Carrera", data: "Carrera", defaultContent: "" },
 					{ title: "Curso", data: "Curso", defaultContent: "" },
 					{ title: "Total alumnos", data: "Total alumnos", defaultContent: 0 },
+					{ title: "Codigo Catedratico", data: "Codigo Catedratico", defaultContent: "" },
 					{ title: "Catedrático", data: "Nombre de catedrático", defaultContent: "" },
 					{ title: "Ciclo de estudio", data: "Ciclo de estudio", defaultContent: "" },
 					{ title: "Jornada", data: "Jornada", defaultContent: "" },
