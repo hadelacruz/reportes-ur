@@ -141,7 +141,6 @@
 			const periodId = season.period_id || null;
 			const periodName = period.name || "Sin periodo";
 			const careerName = (career && career.name) || "Sin carrera";
-			const careerId = pre.career_id || null;
 			const studyingCycleName = (studyingCycle && studyingCycle.name) || "Sin ciclo de estudio";
 			const studyingTimeName = (studyingTime && studyingTime.name) || "Sin jornada";
 			const studentName = student.name || "Sin nombre";
@@ -161,7 +160,7 @@
 
 			const codigoSeccion = codigoSeccionActual;
 
-			const groupKey = [classroomId || "", careerId || "", courseId || "", branchId || "", periodId || ""].join("|");
+			const groupKey = [classroomId || "", courseId || "", branchId || "", periodId || ""].join("|");
 
 			details.push({
 				Sede: branchName,
@@ -182,7 +181,6 @@
 				grouped.set(groupKey, {
 					Aula: classroomName,
 					Curso: courseName,
-					Carrera: careerName,
 					Sede: branchName,
 					"Codigo de Sección": codigoSeccion,
 					Periodo: periodName,
@@ -190,11 +188,14 @@
 					"Nombre de catedrático": professorName,
 					"Ciclo de estudio": studyingCycleName,
 					Jornada: studyingTimeName,
+					careers: new Set(),
 					studentIds: new Set()
 				});
 			}
 
-			grouped.get(groupKey).studentIds.add(pre.student_id);
+			const groupItem = grouped.get(groupKey);
+			groupItem.studentIds.add(pre.student_id);
+			groupItem.careers.add(careerName);
 		});
 
 		details.sort((left, right) => {
@@ -209,7 +210,7 @@
 
 		const summary = Array.from(grouped.values()).map(item => ({
 			Aula: item.Aula,
-			Carrera: item.Carrera,
+			Carrera: Array.from(item.careers).sort((left, right) => String(left).localeCompare(String(right), "es")).join(", "),
 			Curso: item.Curso,
 			Sede: item.Sede,
 			"Codigo de Sección": item["Codigo de Sección"],
