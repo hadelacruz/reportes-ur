@@ -291,34 +291,63 @@ models.crs_record.findAll({
     });
   }
 
-  var dedupMap = {};
+  // Paso 1: Agrupar por sección + tipo + sede, tomar solo la acta más reciente de cada sede
+  var sectionTypeSiteMap = {};
   jsonRecords.forEach(function(record) {
     var normalizedTypeForDedup = normalizeRecordType(record.record_type);
     var dedupTypeKey = normalizedTypeForDedup || String(record.record_type || "").trim();
-    var dedupKey = record.section_id + "|" + dedupTypeKey;
+    var branchId = record.std_branch ? record.std_branch.branch_id : record.branch_id;
+    var sectionTypeSiteKey = record.section_id + "|" + dedupTypeKey + "|" + branchId;
     var currentRank = Number(record.record_correction_number || 0);
     var currentDate = record.create_date ? new Date(record.create_date).getTime() : 0;
 
-    if (!dedupMap[dedupKey]) {
-      dedupMap[dedupKey] = record;
-      return;
-    }
+    if (!sectionTypeSiteMap[sectionTypeSiteKey]) {
+      sectionTypeSiteMap[sectionTypeSiteKey] = record;
+    } else {
+      var existing = sectionTypeSiteMap[sectionTypeSiteKey];
+      var existingRank = Number(existing.record_correction_number || 0);
+      var existingDate = existing.create_date ? new Date(existing.create_date).getTime() : 0;
 
-    var existing = dedupMap[dedupKey];
-    var existingRank = Number(existing.record_correction_number || 0);
-    var existingDate = existing.create_date ? new Date(existing.create_date).getTime() : 0;
-
-    if (
-      currentRank > existingRank ||
-      (currentRank === existingRank && currentDate > existingDate) ||
-      (currentRank === existingRank && currentDate === existingDate && record.record_id > existing.record_id)
-    ) {
-      dedupMap[dedupKey] = record;
+      if (
+        currentRank > existingRank ||
+        (currentRank === existingRank && currentDate > existingDate) ||
+        (currentRank === existingRank && currentDate === existingDate && record.record_id > existing.record_id)
+      ) {
+        sectionTypeSiteMap[sectionTypeSiteKey] = record;
+      }
     }
   });
 
-  var dedupRecords = Object.keys(dedupMap).map(function(key) {
-    return dedupMap[key];
+  // Paso 2: Tomar las actas más recientes de cada sede y agrupar por sección + tipo para combinar
+  var bestRecordsByBranch = Object.keys(sectionTypeSiteMap).map(function(key) {
+    return sectionTypeSiteMap[key];
+  });
+
+  var groupMap = {};
+  bestRecordsByBranch.forEach(function(record) {
+    var normalizedTypeForDedup = normalizeRecordType(record.record_type);
+    var dedupTypeKey = normalizedTypeForDedup || String(record.record_type || "").trim();
+    var groupKey = record.section_id + "|" + dedupTypeKey;
+
+    if (!groupMap[groupKey]) {
+      groupMap[groupKey] = {
+        masterRecord: record,
+        combinedDetail: parseJson(record.detail, [])
+      };
+    } else {
+      var currentDetail = parseJson(record.detail, []);
+      if (Array.isArray(currentDetail)) {
+        groupMap[groupKey].combinedDetail = groupMap[groupKey].combinedDetail.concat(currentDetail);
+      }
+    }
+  });
+
+  // Paso 3: Crear array de actas combinadas
+  var dedupRecords = Object.keys(groupMap).map(function(key) {
+    var group = groupMap[key];
+    var combinedRecord = Object.assign({}, group.masterRecord);
+    combinedRecord.detail = JSON.stringify(group.combinedDetail);
+    return combinedRecord;
   });
 
   var rows = [];
