@@ -109,6 +109,7 @@
 
 		const details = [];
 		const grouped = new Map();
+		const aulaGrouped = new Map();
 
 		preinscriptions.forEach(pre => {
 			const section = pre.crs_assignation_section;
@@ -166,6 +167,7 @@
 			const codigoSeccion = codigoSeccionActual;
 
 			const groupKey = [classroomId || "", courseId || "", branchId || "", periodId || ""].join("|");
+			const aulaGroupKey = [classroomId || "", branchId || "", periodId || ""].join("|");
 
 			details.push({
 				Sede: branchName,
@@ -209,6 +211,34 @@
 			if (studentStatusCode === "B") groupItem.baja += 1;
 			if (studentStatusCode === "D") groupItem.fallecido += 1;
 			groupItem.careers.add(careerName);
+
+			if (!aulaGrouped.has(aulaGroupKey)) {
+				aulaGrouped.set(aulaGroupKey, {
+					Aula: classroomName,
+					Sede: branchName,
+					Periodo: periodName,
+					careers: new Set(),
+					courses: new Set(),
+					studentIds: new Set(),
+					activos: 0,
+					suspendidos: 0,
+					baja: 0,
+					fallecido: 0,
+					totalGeneral: 0
+				});
+			}
+
+			const aulaItem = aulaGrouped.get(aulaGroupKey);
+			if (!aulaItem.studentIds.has(pre.student_id)) {
+				aulaItem.studentIds.add(pre.student_id);
+				aulaItem.totalGeneral += 1;
+				if (studentStatusCode === "A") aulaItem.activos += 1;
+				if (studentStatusCode === "S") aulaItem.suspendidos += 1;
+				if (studentStatusCode === "B") aulaItem.baja += 1;
+				if (studentStatusCode === "D") aulaItem.fallecido += 1;
+			}
+			aulaItem.careers.add(careerName);
+			aulaItem.courses.add(courseName);
 		});
 
 		details.sort((left, right) => {
@@ -221,7 +251,7 @@
 			return String(left.Periodo).localeCompare(String(right.Periodo), "es");
 		});
 
-		const summary = Array.from(grouped.values()).map(item => ({
+		const bySection = Array.from(grouped.values()).map(item => ({
 			Aula: item.Aula,
 			Carrera: Array.from(item.careers).sort((left, right) => String(left).localeCompare(String(right), "es")).join(", "),
 			Curso: item.Curso,
@@ -249,9 +279,29 @@
 			return String(left.Periodo).localeCompare(String(right.Periodo), "es");
 		});
 
+		const byClassroom = Array.from(aulaGrouped.values()).map(item => ({
+			Sede: item.Sede,
+			Aula: item.Aula,
+			Carreras: Array.from(item.careers).sort((left, right) => String(left).localeCompare(String(right), "es")).join(", "),
+			Cursos: Array.from(item.courses).sort((left, right) => String(left).localeCompare(String(right), "es")).join(", "),
+			Activos: item.activos,
+			Suspendidos: item.suspendidos,
+			"De Baja": item.baja,
+			Fallecidos: item.fallecido,
+			"Total General": item.totalGeneral,
+			Periodo: item.Periodo
+		})).sort((left, right) => {
+			const sedeCompare = String(left.Sede).localeCompare(String(right.Sede), "es");
+			if (sedeCompare !== 0) return sedeCompare;
+			const aulaCompare = String(left.Aula).localeCompare(String(right.Aula), "es");
+			if (aulaCompare !== 0) return aulaCompare;
+			return String(left.Periodo).localeCompare(String(right.Periodo), "es");
+		});
+
 		resolve({
 			details,
-			summary
+			bySection,
+			byClassroom
 		});
 	} catch (error) {
 		console.error("Error al obtener alumnos por aula:", error);

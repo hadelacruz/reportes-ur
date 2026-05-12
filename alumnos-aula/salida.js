@@ -3,7 +3,8 @@
 		return {
 			result: {
 				details: [],
-				summary: []
+				bySection: [],
+				byClassroom: []
 			},
 			loading: true,
 		}
@@ -39,9 +40,10 @@
 			},
 			buildTables: function(data) {
 				let vm = this;
-				const payload = data && typeof data === "object" && !Array.isArray(data) ? data : { details: Array.isArray(data) ? data : [], summary: Array.isArray(data) ? data : [] };
+				const payload = data && typeof data === "object" && !Array.isArray(data) ? data : { details: Array.isArray(data) ? data : [], bySection: Array.isArray(data) ? data : [], byClassroom: Array.isArray(data) ? data : [] };
 				const details = Array.isArray(payload.details) ? payload.details : [];
-				const summary = Array.isArray(payload.summary) ? payload.summary : [];
+				const bySection = Array.isArray(payload.bySection) ? payload.bySection : [];
+				const byClassroom = Array.isArray(payload.byClassroom) ? payload.byClassroom : [];
 
 				vm.buildDataTable(vm.$refs.detail_table, details, [
 					{ title: "Sede", data: "Sede", defaultContent: "" },
@@ -58,7 +60,7 @@
 					{ title: "Periodo", data: "Periodo", defaultContent: "" }
 				]);
 
-				vm.buildDataTable(vm.$refs.summary_table, summary, [
+				vm.buildDataTable(vm.$refs.summary_table, bySection, [
 					{ title: "Sede", data: "Sede", defaultContent: "" },
 					{ title: "Codigo de Sección", data: "Codigo de Sección", defaultContent: "" },
 					{ title: "Aula", data: "Aula", defaultContent: "" },
@@ -73,6 +75,19 @@
 					{ title: "Catedrático", data: "Nombre de catedrático", defaultContent: "" },
 					{ title: "Ciclo de estudio", data: "Ciclo de estudio", defaultContent: "" },
 					{ title: "Jornada", data: "Jornada", defaultContent: "" },
+					{ title: "Periodo", data: "Periodo", defaultContent: "" }
+				]);
+
+				vm.buildDataTable(vm.$refs.resumen_table, byClassroom, [
+					{ title: "Sede", data: "Sede", defaultContent: "" },
+					{ title: "Aula", data: "Aula", defaultContent: "" },
+					{ title: "Carreras", data: "Carreras", defaultContent: "" },
+					{ title: "Cursos", data: "Cursos", defaultContent: "" },
+					{ title: "Activos", data: "Activos", defaultContent: 0 },
+					{ title: "Suspendidos", data: "Suspendidos", defaultContent: 0 },
+					{ title: "De Baja", data: "De Baja", defaultContent: 0 },
+					{ title: "Fallecidos", data: "Fallecidos", defaultContent: 0 },
+					{ title: "Total General", data: "Total General", defaultContent: 0 },
 					{ title: "Periodo", data: "Periodo", defaultContent: "" }
 				]);
 				
