@@ -41,6 +41,10 @@
 			wherePre.studying_time_id = { [Op.in]: d.studying_time.split(",") };
 		}
 
+		function normalizeStudentStatusCode(value) {
+			return String(value || "").trim().toUpperCase();
+		}
+
 		models.crs_assignation_preinscription.belongsTo(models.crs_assignation_section, {
 			foreignKey: "taken_by_section_id",
 			targetKey: "section_id"
@@ -59,7 +63,7 @@
 		const preinscriptions = await models.crs_assignation_preinscription.findAll({
 			attributes: ["student_id", "taken_by_section_id", "career_id", "studying_cycle_id", "studying_time_id"],
 			include: [
-				{ model: models.std_student, attributes: ["name", "student_id_card"], required: false },
+				{ model: models.std_student, attributes: ["name", "student_id_card", "status_code"], required: false },
 				{ model: models.std_career, attributes: ["name"], required: false },
 				{ model: models.std_studying_cycle, attributes: ["name"], required: false },
 				{ model: models.std_studying_time, attributes: ["name"], required: false },
@@ -145,6 +149,7 @@
 			const studyingTimeName = (studyingTime && studyingTime.name) || "Sin jornada";
 			const studentName = student.name || "Sin nombre";
 			const studentCard = student.student_id_card || "";
+			const studentStatusCode = normalizeStudentStatusCode(student.status_code);
 			let professorSetup = null;
 			if (professor && professor.setup) {
 				try {
@@ -189,12 +194,20 @@
 					"Ciclo de estudio": studyingCycleName,
 					Jornada: studyingTimeName,
 					careers: new Set(),
-					studentIds: new Set()
+					totalGeneral: 0,
+					activos: 0,
+					suspendidos: 0,
+					baja: 0,
+					fallecido: 0
 				});
 			}
 
 			const groupItem = grouped.get(groupKey);
-			groupItem.studentIds.add(pre.student_id);
+			groupItem.totalGeneral += 1;
+			if (studentStatusCode === "A") groupItem.activos += 1;
+			if (studentStatusCode === "S") groupItem.suspendidos += 1;
+			if (studentStatusCode === "B") groupItem.baja += 1;
+			if (studentStatusCode === "D") groupItem.fallecido += 1;
 			groupItem.careers.add(careerName);
 		});
 
@@ -214,7 +227,11 @@
 			Curso: item.Curso,
 			Sede: item.Sede,
 			"Codigo de Sección": item["Codigo de Sección"],
-			"Total alumnos": item.studentIds.size,
+			Activos: item.activos,
+			Suspendidos: item.suspendidos,
+			"De baja": item.baja,
+			Fallecido: item.fallecido,
+			"Total General": item.totalGeneral,
 			"Codigo Catedratico": item["Codigo Catedratico"],
 			"Nombre de catedrático": item["Nombre de catedrático"],
 			"Ciclo de estudio": item["Ciclo de estudio"],
