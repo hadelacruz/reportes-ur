@@ -41,6 +41,10 @@
 			wherePre.studying_time_id = { [Op.in]: d.studying_time.split(",") };
 		}
 
+		if (d.career) {
+			wherePre.career_id = { [Op.in]: d.career.split(",") };
+		}
+
 		function normalizeStudentStatusCode(value) {
 			return String(value || "").trim().toUpperCase();
 		}

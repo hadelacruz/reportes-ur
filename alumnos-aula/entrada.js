@@ -4,6 +4,7 @@
 			api_url: "https://api_modul.uregional.net",
 			user_branch: undefined,
 			branch: undefined,
+			career: undefined,
 			studying_cycle: undefined,
 			professor: undefined,
 			course: undefined,
@@ -111,6 +112,11 @@ methods: {},
 					name: item.name
 				})) : [];
 
+				const careers = configPayload.data.std_careers ? configPayload.data.std_careers.map(item => ({
+					value: item.career_id,
+					name: item.name
+				})) : [];
+
 				window.jQuery(_v.$refs.branch_dropdown).dropdown({
 					onChange: function(value) {
 						_v.branch = value;
@@ -133,6 +139,14 @@ methods: {},
 					}
 				}).dropdown("setup menu", {
 					values: studyingCycles
+				});
+
+				window.jQuery(_v.$refs.career_dropdown).dropdown({
+					onChange: function(value) {
+						_v.career = value;
+					}
+				}).dropdown("setup menu", {
+					values: careers
 				});
 
 				window.jQuery(_v.$refs.professor_dropdown).dropdown({

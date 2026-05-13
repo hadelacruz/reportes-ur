@@ -51,10 +51,11 @@
 				language: {
 					url: "//cdn.datatables.net/plug-ins/1.10.21/i18n/Spanish.json"
 				},
+				pageLength: 50,
 				paging: true,
 				searching: true,
 				ordering: true,
-				dom: 'Bfrtip',
+				dom: 'lBfrtip',
 				buttons: [
 					'copy', 'csv', 'excel', 'pdf', 'print'
 				]

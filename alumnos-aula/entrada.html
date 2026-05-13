@@ -27,12 +27,6 @@
 				<div class="menu"></div>
 			</div>
 		</div>
-		<div class="six wide field">
-			<label>Nombre de Aula</label>
-			<div class="ui input" ref="classroom_name">
-				<input class="prompt" type="text" v-model="clsrmName" placeholder="Nombre de Aula">
-			</div>
-		</div>
 	</div>
 	<div class="fields">
 		<div class="six wide field">
@@ -62,13 +56,30 @@
 				<div class="menu"></div>
 			</div>
 		</div>
+	</div>
+	<div class="fields">
+		<div class="six wide field">
+			<label>Carrera</label>
+			<div class="ui fluid multiple search selection dropdown" ref="career_dropdown">
+				<input type="hidden" name="career">
+				<i class="dropdown icon"></i>
+				<div class="default text">Seleccione</div>
+				<div class="menu"></div>
+			</div>
+		</div>
+		<div class="six wide field">
+			<label>Nombre de Aula</label>
+			<div class="ui input" ref="classroom_name">
+				<input class="prompt" type="text" v-model="clsrmName" placeholder="Nombre de Aula">
+			</div>
+		</div>
 		<div class="six wide field">
 			<label>Código de Sección</label>
 			<div class="ui input" ref="section_code">
 				<input class="prompt" type="text" v-model="sectionCode" placeholder="Código de Sección">
 			</div>
 		</div>
-	</div>	
+	</div>
 		<div class="five wide field">
 			<label>Buscar</label>
 			<div class="ui blue fluid icon labeled button" @click="submit">
