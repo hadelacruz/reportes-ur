@@ -88,6 +88,7 @@
 					{ title: "De Baja", data: "De Baja", defaultContent: 0 },
 					{ title: "Fallecidos", data: "Fallecidos", defaultContent: 0 },
 					{ title: "Total General", data: "Total General", defaultContent: 0 },
+					{ title: "Alumnos con más de 2 cursos con NSP", data: "Alumnos con NSP>3", defaultContent: 0 },
 					{ title: "Periodo", data: "Periodo", defaultContent: "" }
 				]);
 				

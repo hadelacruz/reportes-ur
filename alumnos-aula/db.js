@@ -49,6 +49,65 @@
 			return String(value || "").trim().toUpperCase();
 		}
 
+		function normalizeStageName(stage) {
+			const name = String(stage || "").trim().toLowerCase();
+			if (name === "fase 1") return "Fase 1";
+			if (name === "fase 2") return "Fase 2";
+			if (name === "fase final") return "Fase Final";
+			return "";
+		}
+
+		function parseScoreSetup(value) {
+			if (!value) return [];
+			if (Array.isArray(value)) return value;
+			if (typeof value === "string") {
+				try {
+					const parsed = JSON.parse(value);
+					return Array.isArray(parsed) ? parsed : [];
+				} catch (error) {
+					return [];
+				}
+			}
+			return [];
+		}
+
+		function getStageRows(scoreSetup, stageName) {
+			return scoreSetup.filter(function(item) {
+				return normalizeStageName(item && item.stage) === stageName;
+			});
+		}
+
+		function hasEnabledStage(stageRows) {
+			if (!Array.isArray(stageRows) || stageRows.length === 0) return false;
+			return stageRows.some(function(row) {
+				if (!row || typeof row !== "object") return false;
+				if (row.enable === false || row.enabled === false || row.active === false) return false;
+				return true;
+			});
+		}
+
+		function hasNSP(stageRows) {
+			if (!Array.isArray(stageRows) || stageRows.length === 0) return false;
+			const nspRow = stageRows.find(function(row) {
+				return row && row.name === "NSP";
+			});
+			if (nspRow && nspRow.nsp === true) return true;
+
+			const examRow = stageRows.find(function(row) {
+				return row && row.name === "Examen";
+			});
+			return !!(examRow && String(examRow.score || "").trim().toUpperCase() === "NSP");
+		}
+
+		function hasNSPInTwoMainStages(scoreSetup) {
+			const stages = ["Fase 1", "Fase 2"];
+			return stages.every(function(stageName) {
+				const rows = getStageRows(scoreSetup, stageName);
+				if (!hasEnabledStage(rows)) return false;
+				return hasNSP(rows);
+			});
+		}
+
 		models.crs_assignation_preinscription.belongsTo(models.crs_assignation_section, {
 			foreignKey: "taken_by_section_id",
 			targetKey: "section_id"
@@ -111,9 +170,28 @@
 			where: wherePre
 		});
 
+		const sectionIds = [...new Set(preinscriptions.map(pre => pre.taken_by_section_id).filter(Boolean))];
+		const studentIds = [...new Set(preinscriptions.map(pre => pre.student_id).filter(Boolean))];
+
+		const scores = sectionIds.length > 0 && studentIds.length > 0
+			? await models.crs_score.findAll({
+				where: {
+					section_id: { [Op.in]: sectionIds },
+					student_id: { [Op.in]: studentIds }
+				},
+				attributes: ["section_id", "student_id", "setup"]
+			})
+			: [];
+
+		const scoreMap = new Map();
+		scores.forEach(function(score) {
+			scoreMap.set(score.section_id + "-" + score.student_id, score);
+		});
+
 		const details = [];
 		const grouped = new Map();
 		const aulaGrouped = new Map();
+		const nspRiskCoursesByAulaStudent = new Map();
 
 		preinscriptions.forEach(pre => {
 			const section = pre.crs_assignation_section;
@@ -191,6 +269,7 @@
 			if (!grouped.has(groupKey)) {
 				grouped.set(groupKey, {
 					Aula: classroomName,
+					aulaGroupKey: aulaGroupKey,
 					Curso: courseName,
 					Sede: branchName,
 					"Codigo de Sección": codigoSeccion,
@@ -200,6 +279,7 @@
 					"Ciclo de estudio": studyingCycleName,
 					Jornada: studyingTimeName,
 					careers: new Set(),
+					studentIds: new Set(),
 					totalGeneral: 0,
 					activos: 0,
 					suspendidos: 0,
@@ -215,9 +295,11 @@
 			if (studentStatusCode === "B") groupItem.baja += 1;
 			if (studentStatusCode === "D") groupItem.fallecido += 1;
 			groupItem.careers.add(careerName);
+			groupItem.studentIds.add(pre.student_id);
 
 			if (!aulaGrouped.has(aulaGroupKey)) {
 				aulaGrouped.set(aulaGroupKey, {
+					aulaGroupKey: aulaGroupKey,
 					Aula: classroomName,
 					Sede: branchName,
 					Periodo: periodName,
@@ -243,6 +325,30 @@
 			}
 			aulaItem.careers.add(careerName);
 			aulaItem.courses.add(courseName);
+
+			if (studentStatusCode === "A" || studentStatusCode === "S") {
+				const scoreRecord = scoreMap.get((section.section_id || "") + "-" + pre.student_id);
+				const scoreSetup = parseScoreSetup(scoreRecord && scoreRecord.setup);
+				if (hasNSPInTwoMainStages(scoreSetup)) {
+					const studentAulaKey = aulaGroupKey + "|" + pre.student_id;
+					if (!nspRiskCoursesByAulaStudent.has(studentAulaKey)) {
+						nspRiskCoursesByAulaStudent.set(studentAulaKey, new Set());
+					}
+					nspRiskCoursesByAulaStudent.get(studentAulaKey).add(courseId || section.section_id || "N/A");
+				}
+			}
+		});
+
+		const riskStudentsByAula = new Map();
+		nspRiskCoursesByAulaStudent.forEach(function(coursesSet, studentAulaKey) {
+			if (!coursesSet || coursesSet.size < 3) return;
+			const parts = studentAulaKey.split("|");
+			const studentId = parts.pop();
+			const aulaKey = parts.join("|");
+			if (!riskStudentsByAula.has(aulaKey)) {
+				riskStudentsByAula.set(aulaKey, new Set());
+			}
+			riskStudentsByAula.get(aulaKey).add(studentId);
 		});
 
 		details.sort((left, right) => {
@@ -286,6 +392,7 @@
 		const byClassroom = Array.from(aulaGrouped.values()).map(item => ({
 			Sede: item.Sede,
 			Aula: item.Aula,
+			"Alumnos con NSP>3": (riskStudentsByAula.get(item.aulaGroupKey) || new Set()).size,
 			Carreras: Array.from(item.careers).sort((left, right) => String(left).localeCompare(String(right), "es")).join(", "),
 			Cursos: Array.from(item.courses).sort((left, right) => String(left).localeCompare(String(right), "es")).join(", "),
 			Activos: item.activos,
