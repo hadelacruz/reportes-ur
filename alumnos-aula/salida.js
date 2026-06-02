@@ -83,12 +83,14 @@
 					{ title: "Aula", data: "Aula", defaultContent: "" },
 					{ title: "Carreras", data: "Carreras", defaultContent: "" },
 					{ title: "Cursos", data: "Cursos", defaultContent: "" },
+					{ title: "Jornada", data: "Jornada", defaultContent: "" },
 					{ title: "Activos", data: "Activos", defaultContent: 0 },
 					{ title: "Suspendidos", data: "Suspendidos", defaultContent: 0 },
 					{ title: "De Baja", data: "De Baja", defaultContent: 0 },
 					{ title: "Fallecidos", data: "Fallecidos", defaultContent: 0 },
 					{ title: "Total General", data: "Total General", defaultContent: 0 },
 					{ title: "Alumnos con más de 2 cursos con NSP", data: "Alumnos con NSP>3", defaultContent: 0 },
+					{ title: "Activos sin NSP", data: "Activos sin NSP", defaultContent: 0 },
 					{ title: "Periodo", data: "Periodo", defaultContent: "" }
 				]);
 				

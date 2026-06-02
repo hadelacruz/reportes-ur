@@ -122,6 +122,8 @@
 		models.crs_assignation_section.belongsTo(models.pfs_professor, { foreignKey: "professor_id" });
 		models.crs_assignation_season.belongsTo(models.std_period, { foreignKey: "period_id" });
 		models.crs_assignation_classroom.belongsTo(models.std_branch, { foreignKey: "branch_id" });
+		models.crs_assignation_classroom.hasMany(models.crs_assignation_classroom_studying_time, { foreignKey: "classroom_id" });
+		models.crs_assignation_classroom_studying_time.belongsTo(models.std_studying_time, { foreignKey: "studying_time_id" });
 
 		const preinscriptions = await models.crs_assignation_preinscription.findAll({
 			attributes: ["student_id", "taken_by_section_id", "career_id", "studying_cycle_id", "studying_time_id"],
@@ -186,6 +188,30 @@
 		const scoreMap = new Map();
 		scores.forEach(function(score) {
 			scoreMap.set(score.section_id + "-" + score.student_id, score);
+		});
+
+		const classroomIds = [...new Set(preinscriptions.map(pre => {
+			const section = pre.crs_assignation_section;
+			return section && section.crs_assignation_classroom && section.crs_assignation_classroom.classroom_id;
+		}).filter(Boolean))];
+
+		const classroomStudyingTimes = classroomIds.length > 0
+			? await models.crs_assignation_classroom_studying_time.findAll({
+				where: { classroom_id: { [Op.in]: classroomIds } },
+				attributes: ["classroom_id", "studying_time_id"],
+				include: [
+					{ model: models.std_studying_time, attributes: ["name"], required: false }
+				]
+			})
+			: [];
+
+		const classroomJornadaMap = new Map();
+		classroomStudyingTimes.forEach(function(cst) {
+			const jornadaName = (cst.std_studying_time && cst.std_studying_time.name) || "";
+			if (!classroomJornadaMap.has(cst.classroom_id)) {
+				classroomJornadaMap.set(cst.classroom_id, []);
+			}
+			if (jornadaName) classroomJornadaMap.get(cst.classroom_id).push(jornadaName);
 		});
 
 		const details = [];
@@ -300,6 +326,7 @@
 			if (!aulaGrouped.has(aulaGroupKey)) {
 				aulaGrouped.set(aulaGroupKey, {
 					aulaGroupKey: aulaGroupKey,
+					classroomId: classroomId,
 					Aula: classroomName,
 					Sede: branchName,
 					Periodo: periodName,
@@ -326,7 +353,7 @@
 			aulaItem.careers.add(careerName);
 			aulaItem.courses.add(courseName);
 
-			if (studentStatusCode === "A" || studentStatusCode === "S") {
+			if (studentStatusCode === "A") {
 				const scoreRecord = scoreMap.get((section.section_id || "") + "-" + pre.student_id);
 				const scoreSetup = parseScoreSetup(scoreRecord && scoreRecord.setup);
 				if (hasNSPInTwoMainStages(scoreSetup)) {
@@ -389,10 +416,17 @@
 			return String(left.Periodo).localeCompare(String(right.Periodo), "es");
 		});
 
-		const byClassroom = Array.from(aulaGrouped.values()).map(item => ({
+		const byClassroom = Array.from(aulaGrouped.values()).map(item => {
+			const activosConNSP = (riskStudentsByAula.get(item.aulaGroupKey) || new Set()).size;
+			const activosSinNSP = item.activos - activosConNSP;
+			const jornadaNames = classroomJornadaMap.get(item.classroomId) || [];
+			const jornadaLabel = [...new Set(jornadaNames)].sort((a, b) => a.localeCompare(b, "es")).join(", ") || "Sin jornada";
+			return {
 			Sede: item.Sede,
 			Aula: item.Aula,
-			"Alumnos con NSP>3": (riskStudentsByAula.get(item.aulaGroupKey) || new Set()).size,
+			Jornada: jornadaLabel,
+			"Alumnos con NSP>3": activosConNSP,
+			"Activos sin NSP": activosSinNSP,
 			Carreras: Array.from(item.careers).sort((left, right) => String(left).localeCompare(String(right), "es")).join(", "),
 			Cursos: Array.from(item.courses).sort((left, right) => String(left).localeCompare(String(right), "es")).join(", "),
 			Activos: item.activos,
@@ -401,7 +435,8 @@
 			Fallecidos: item.fallecido,
 			"Total General": item.totalGeneral,
 			Periodo: item.Periodo
-		})).sort((left, right) => {
+		};
+		}).sort((left, right) => {
 			const sedeCompare = String(left.Sede).localeCompare(String(right.Sede), "es");
 			if (sedeCompare !== 0) return sedeCompare;
 			const aulaCompare = String(left.Aula).localeCompare(String(right.Aula), "es");
