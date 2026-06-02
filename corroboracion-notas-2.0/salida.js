@@ -127,19 +127,13 @@
                     isPracticalCourse = seenPracticalStage;
                 }
 
-                const isDropout = row.student_status_code === "B" || row.student_status_code === "D";
-                const dropoutLabel = row.student_status_code === "B" ? "BAJA" : row.student_status_code === "D" ? "DESHABILITADO" : "";
+
 
                 function regularStageInfo(stageName) {
                     if (isPracticalCourse) return {
                         tiene: "NA",
                         nota: "",
                         examen: ""
-                    };
-                    if (isDropout) return {
-                        tiene: "Si",
-                        nota: dropoutLabel,
-                        examen: dropoutLabel
                     };
 
                     const stageBlocks = blocksByStage.get(stageName) || [];
@@ -192,10 +186,6 @@
                     if (!applies) return {
                         tiene: "NA",
                         nota: ""
-                    };
-                    if (isDropout) return {
-                        tiene: "Si",
-                        nota: dropoutLabel
                     };
 
                     const stageBlocks = blocksByStage.get(stageName) || [];
