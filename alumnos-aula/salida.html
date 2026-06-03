@@ -6,6 +6,7 @@
 		<a class="item active" data-tab="first">Detalle de alumnos</a>
 		<a class="item" data-tab="second">Alumnos por sección</a>
 		<a class="item" data-tab="third">Alumnos por aula</a>
+		<a class="item" data-tab="fourth">Secciones con menos de 10 alumnos</a>
 	</div>
 	<div class="ui bottom attached tab segment active" data-tab="first" style="overflow-x: auto;">
 		<table class="ui very compact selectable celled striped table" ref="detail_table" style="min-width:100%">
@@ -66,6 +67,30 @@
 					<th>Fallecidos</th>
 					<th>Total General</th>
 					<th>Alumnos con más de 2 cursos con NSP</th>
+					<th>Periodo</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	</div>
+	<div class="ui bottom attached tab segment" data-tab="fourth" style="overflow-x: auto;">
+		<table class="ui very compact selectable celled striped table" ref="secciones_menos_10_table" style="min-width:100%">
+			<thead class="ui inverted grey table">
+				<tr>
+					<th>Sede</th>
+					<th>Codigo de Sección</th>
+					<th>Aula</th>
+					<th>Carrera</th>
+					<th>Curso</th>
+					<th>Activos</th>
+					<th>Suspendidos</th>
+					<th>De baja</th>
+					<th>Fallecido</th>
+					<th>Total General</th>
+					<th>Codigo Catedratico</th>
+					<th>Catedrático</th>
+					<th>Ciclo de estudio</th>
+					<th>Jornada</th>
 					<th>Periodo</th>
 				</tr>
 			</thead>

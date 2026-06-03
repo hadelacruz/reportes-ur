@@ -93,7 +93,27 @@
 					{ title: "Activos sin NSP", data: "Activos sin NSP", defaultContent: 0 },
 					{ title: "Periodo", data: "Periodo", defaultContent: "" }
 				]);
-				
+
+				const bySectionLessThan10 = bySection.filter(item => item["Total General"] < 10);
+
+				vm.buildDataTable(vm.$refs.secciones_menos_10_table, bySectionLessThan10, [
+					{ title: "Sede", data: "Sede", defaultContent: "" },
+					{ title: "Codigo de Sección", data: "Codigo de Sección", defaultContent: "" },
+					{ title: "Aula", data: "Aula", defaultContent: "" },
+					{ title: "Carrera", data: "Carrera", defaultContent: "" },
+					{ title: "Curso", data: "Curso", defaultContent: "" },
+					{ title: "Activos", data: "Activos", defaultContent: 0 },
+					{ title: "Suspendidos", data: "Suspendidos", defaultContent: 0 },
+					{ title: "De baja", data: "De baja", defaultContent: 0 },
+					{ title: "Fallecido", data: "Fallecido", defaultContent: 0 },
+					{ title: "Total General", data: "Total General", defaultContent: 0 },
+					{ title: "Codigo Catedratico", data: "Codigo Catedratico", defaultContent: "" },
+					{ title: "Catedrático", data: "Nombre de catedrático", defaultContent: "" },
+					{ title: "Ciclo de estudio", data: "Ciclo de estudio", defaultContent: "" },
+					{ title: "Jornada", data: "Jornada", defaultContent: "" },
+					{ title: "Periodo", data: "Periodo", defaultContent: "" }
+				]);
+
 				vm.loading = false;
 		}
 	},
