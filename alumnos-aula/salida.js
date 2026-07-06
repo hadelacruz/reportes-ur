@@ -80,10 +80,11 @@
 
 				vm.buildDataTable(vm.$refs.resumen_table, byClassroom, [
 					{ title: "Sede", data: "Sede", defaultContent: "" },
-					{ title: "Aula", data: "Aula", defaultContent: "" },
 					{ title: "Carreras", data: "Carreras", defaultContent: "" },
-					{ title: "Cursos", data: "Cursos", defaultContent: "" },
+					{ title: "Ciclo", data: "Ciclo de estudio", defaultContent: "" },
 					{ title: "Jornada", data: "Jornada", defaultContent: "" },
+					{ title: "Aula", data: "Aula", defaultContent: "" },
+					{ title: "Cursos", data: "Cursos", defaultContent: "" },
 					{ title: "Activos", data: "Activos", defaultContent: 0 },
 					{ title: "Suspendidos", data: "Suspendidos", defaultContent: 0 },
 					{ title: "De Baja", data: "De Baja", defaultContent: 0 },

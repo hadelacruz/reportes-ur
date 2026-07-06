@@ -330,6 +330,7 @@
 					Aula: classroomName,
 					Sede: branchName,
 					Periodo: periodName,
+					cycles: new Set(),
 					careers: new Set(),
 					courses: new Set(),
 					studentIds: new Set(),
@@ -352,6 +353,7 @@
 			}
 			aulaItem.careers.add(careerName);
 			aulaItem.courses.add(courseName);
+			aulaItem.cycles.add(studyingCycleName);
 
 			if (studentStatusCode === "A") {
 				const scoreRecord = scoreMap.get((section.section_id || "") + "-" + pre.student_id);
@@ -425,6 +427,7 @@
 			Sede: item.Sede,
 			Aula: item.Aula,
 			Jornada: jornadaLabel,
+			"Ciclo de estudio": Array.from(item.cycles).sort((left, right) => String(left).localeCompare(String(right), "es")).join(", "),
 			"Alumnos con NSP>3": activosConNSP,
 			"Activos sin NSP": activosSinNSP,
 			Carreras: Array.from(item.careers).sort((left, right) => String(left).localeCompare(String(right), "es")).join(", "),
