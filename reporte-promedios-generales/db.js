@@ -5,12 +5,9 @@ async function getPreinscriptionsForStudents(studentIds, filters, classroomInclu
         sctnCondition
     } = filters;
 
-    // Actualiza tus condiciones para aplicar a este bloque
-    let wherePre = {
-        ...condition,
-        student_id: studentIds
-    };
-
+    // El período/sede/carrera/ciclo/jornada se resuelven por la INSCRIPCIÓN del alumno
+    // (fuente confiable y lo que muestra el reporte), no por la temporada/preinscripción,
+    // porque la season de una preinscripción puede no coincidir con el período real.
     let whereInsc = {
         ...inscCondition,
         student_id: studentIds
@@ -19,6 +16,72 @@ async function getPreinscriptionsForStudents(studentIds, filters, classroomInclu
     let whereScore = {
         student_id: studentIds
     };
+
+    // ¿Se pidió algún filtro de contexto del alumno? Si es así, se filtra por inscripción.
+    const hasInscriptionFilter = !!(
+        inscCondition.period_id ||
+        inscCondition.branch_id ||
+        inscCondition.career_id ||
+        inscCondition.studying_cycle_id ||
+        inscCondition.studying_time_id
+    );
+
+    models.std_inscription.belongsTo(models.std_period, {
+        foreignKey: "period_id"
+    });
+    models.std_inscription.belongsTo(models.std_career, {
+        foreignKey: "career_id"
+    });
+    models.std_inscription.belongsTo(models.std_studying_cycle, {
+        foreignKey: "studying_cycle_id"
+    });
+    models.std_inscription.belongsTo(models.std_studying_time, {
+        foreignKey: "studying_time_id"
+    });
+    models.std_inscription.belongsTo(models.std_branch, {
+        foreignKey: "branch_id"
+    });
+
+    // 1) Inscripciones que cumplen los filtros de contexto (también alimentan el display).
+    const inscriptions = await models.std_inscription.findAll({
+        where: whereInsc,
+        attributes: ["inscription_id", "student_id", "career_id", "branch_id", "studying_cycle_id", "studying_time_id"],
+        include: [{
+                model: models.std_career,
+                attributes: ["name"]
+            },
+            {
+                model: models.std_period,
+                attributes: ["name"]
+            },
+            {
+                model: models.std_branch,
+                attributes: ["name"]
+            },
+            {
+                model: models.std_studying_cycle,
+                attributes: ["name"]
+            },
+            {
+                model: models.std_studying_time,
+                attributes: ["name"]
+            }
+        ],
+        order: [
+            ["create_date", "DESC"]
+        ]
+    });
+
+    // 2) Preinscripciones del alumno. Cuando hay filtro de contexto, se restringen a las
+    //    inscripciones que lo cumplen (mismo criterio que se muestra en el reporte).
+    const inscriptionIds = inscriptions.map(i => i.inscription_id);
+
+    let wherePre = {
+        student_id: studentIds
+    };
+    if (hasInscriptionFilter) {
+        wherePre.inscription_id = inscriptionIds;
+    }
 
     models.crs_assignation_preinscription.belongsTo(models.crs_assignation_section, {
         foreignKey: "taken_by_section_id",
@@ -47,10 +110,7 @@ async function getPreinscriptionsForStudents(studentIds, filters, classroomInclu
         include: [{
             model: models.crs_assignation_season,
             attributes: ["season_id", "period_id"],
-            required: true,
-            where: inscCondition.period_id ? {
-                period_id: inscCondition.period_id
-            } : {}
+            required: true
         }, {
             model: models.std_student,
             attributes: ["name", "student_id_card"],
@@ -75,51 +135,6 @@ async function getPreinscriptionsForStudents(studentIds, filters, classroomInclu
                 }
             ]
         }]
-    });
-
-    models.std_inscription.belongsTo(models.std_period, {
-        foreignKey: "period_id"
-    });
-    models.std_inscription.belongsTo(models.std_career, {
-        foreignKey: "career_id"
-    });
-    models.std_inscription.belongsTo(models.std_studying_cycle, {
-        foreignKey: "studying_cycle_id"
-    });
-    models.std_inscription.belongsTo(models.std_studying_time, {
-        foreignKey: "studying_time_id"
-    });
-    models.std_inscription.belongsTo(models.std_branch, {
-        foreignKey: "branch_id"
-    });
-
-    const inscriptions = await models.std_inscription.findAll({
-        where: whereInsc,
-        attributes: ["inscription_id", "student_id", "career_id", "branch_id", "studying_cycle_id", "studying_time_id"],
-        include: [{
-                model: models.std_career,
-                attributes: ["name"]
-            },
-            {
-                model: models.std_period,
-                attributes: ["name"]
-            },
-            {
-                model: models.std_branch,
-                attributes: ["name"]
-            },
-            {
-                model: models.std_studying_cycle,
-                attributes: ["name"]
-            },
-            {
-                model: models.std_studying_time,
-                attributes: ["name"]
-            }
-        ],
-        order: [
-            ["create_date", "DESC"]
-        ]
     });
 
     const scores = await models.crs_score.findAll({
