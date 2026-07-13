@@ -345,10 +345,15 @@
                 });
             });
 
+            // Fases cuyo bloque completo se pinta de rojo cuando al menos una de
+            // ellas no llega al 100% (recuperaciones excluidas)
+            const HIGHLIGHT_INCOMPLETE = new Set(["Fase 1", "Extraordinaria 1", "Fase 2", "Extraordinaria 2", "Fase Final"]);
+
             const finalRows = Array.from(grouped.values()).map(group => {
                 const row = {
                     Sede: group.Sede,
-                    Periodo: group.Periodo
+                    Periodo: group.Periodo,
+                    _incomplete: {}
                 };
 
                 const stages = Object.keys(group.fases_esperadas);
@@ -361,7 +366,10 @@
                     // Truncar (no redondear) para que 100.00% solo aparezca cuando esten todas las notas
                     const porcentaje = esperados > 0 ? Math.floor((ingresados / esperados) * 10000) / 100 : 0;
                     row[stage] = porcentaje.toFixed(2) + "% <br><small>(hay " + ingresados + " de " + esperados + ")</small>";
+                    row._incomplete[stage] = esperados > 0 && ingresados < esperados;
                 });
+
+                row._blockIncomplete = Array.from(HIGHLIGHT_INCOMPLETE).some(stage => row._incomplete[stage] === true);
 
                 return row;
             });
@@ -375,15 +383,31 @@
             const allKeys = new Set();
             finalRows.forEach(row => Object.keys(row).forEach(key => allKeys.add(key)));
             const metaKeys = META_COLUMNS.filter(key => allKeys.has(key));
-            const stageKeys = Array.from(allKeys).filter(key => !META_COLUMNS.includes(key));
+            const stageKeys = Array.from(allKeys).filter(key => !META_COLUMNS.includes(key) && key.indexOf("_") !== 0);
             const regularStageKeys = orderByPreference(stageKeys.filter(key => !PRACTICAL_STAGES.has(key)), REGULAR_STAGE_ORDER);
             const practicalStageKeys = orderByPreference(stageKeys.filter(key => PRACTICAL_STAGES.has(key)), Array.from(PRACTICAL_STAGES));
             const orderedKeys = [...metaKeys, ...regularStageKeys, ...practicalStageKeys];
 
-            const tableColumns = orderedKeys.map(key => ({
-                data: key,
-                defaultContent: META_COLUMNS.includes(key) ? "" : "0.00%"
-            }));
+            const tableColumns = orderedKeys.map(key => {
+                const column = {
+                    data: key,
+                    defaultContent: META_COLUMNS.includes(key) ? "" : "0.00%"
+                };
+
+                if (HIGHLIGHT_INCOMPLETE.has(key)) {
+                    column.createdCell = function(td, cellData, rowData) {
+                        // Se pinta el bloque completo Fase 1 -> Fase Final cuando al
+                        // menos una de esas fases tiene notas faltantes en la sede
+                        if (rowData && rowData._blockIncomplete) {
+                            td.style.backgroundColor = "#ffd6d6";
+                            td.style.color = "#9f3a38";
+                            td.style.fontWeight = "bold";
+                        }
+                    };
+                }
+
+                return column;
+            });
 
             if (window.jQuery.fn.DataTable.isDataTable(vm.$refs.notes_table)) {
                 window.jQuery(vm.$refs.notes_table).DataTable().destroy();
