@@ -172,23 +172,89 @@
                 return { tiene: "No", nota: "" };
             }
 
-            function recoveryStageInfo(blocksByStage, stageName, isPractical) {
+            function sumZonaExamen(blocksByStage, stageName) {
+                const blocks = blocksByStage.get(stageName) || [];
+                let total = 0;
+                blocks.forEach(x => {
+                    if (x && (x.name === "Zona" || x.name === "Examen") && hasNumericScore(x.score)) {
+                        total += Number(x.score);
+                    }
+                });
+                return total;
+            }
+
+            // El stage de recuperación solo se crea en crs_score.setup cuando el
+            // catedrático ingresa un valor. Para los pendientes (sin stage aún) la
+            // asignación se calcula con la regla del 61: va a Recuperacion1 si con
+            // Fase Final resuelta la suma Zona+Examen de las 3 fases no llega a 61
+            // (un NSP solo aporta 0 a la suma; si aun así llega a 61, ganó y no va).
+            // Va a Recuperacion2 si Recuperacion1 quedó en NSP o su nota (sustituye
+            // al bloque de Fase Final, sobre 40) sigue sin llegar a 61.
+            function recoveryStageInfo(blocksByStage, stageName, isPractical, isDropout) {
                 if (isPractical) return { tiene: "NA", nota: "" };
 
                 const stageBlocks = blocksByStage.get(stageName) || [];
-                if (stageBlocks.length === 0) return { tiene: "NA", nota: "" };
 
-                const firstValue = stageBlocks.find(x => hasAnyScore(x && x.score));
-                if (firstValue) {
-                    return { tiene: "Si", nota: firstValue.score };
+                // El stage ya existe en el setup: el alumno está asignado
+                if (stageBlocks.length > 0) {
+                    const firstValue = stageBlocks.find(x => hasAnyScore(x && x.score));
+                    if (firstValue) {
+                        return { tiene: "Si", nota: firstValue.score };
+                    }
+
+                    // En recuperaciones el flag nsp viene en el propio item
+                    // (name = "Recuperacion1/2"), no en un item aparte name="NSP"
+                    const hasNSP = stageBlocks.some(x => x && x.nsp === true);
+                    if (hasNSP) {
+                        return { tiene: "Si", nota: "NSP" };
+                    }
+
+                    if (isDropout) return { tiene: "NA", nota: "" };
+                    return { tiene: "No", nota: "" };
                 }
 
-                const hasNSP = stageBlocks.some(x => x && x.name === "NSP" && x.nsp === true);
-                if (hasNSP) {
-                    return { tiene: "Si", nota: "NSP" };
+                // El stage aún no existe: determinar si el alumno debería estar
+                // asignado (pendiente sin ningún valor ingresado)
+                if (isDropout) return { tiene: "NA", nota: "" };
+
+                const ffBlocks = blocksByStage.get("Fase Final") || [];
+                const ffNSP = ffBlocks.some(x => x && x.name === "NSP" && x.nsp === true);
+                const ffSDE = ffBlocks.some(x => x && x.name === "SDE" && x.sde === true);
+                const ffExam = ffBlocks.find(x => x && x.name === "Examen");
+                const ffClosed = ffBlocks.some(x => x && x.name === "is_closed" && x.is_closed === true);
+                const ffResolved = ffClosed || ffNSP || ffSDE || !!(ffExam && hasNumericScore(ffExam.score));
+
+                // Sin Fase Final resuelta no se sabe si irá a recuperación;
+                // con SDE no tiene derecho a recuperación
+                if (!ffResolved || ffSDE) return { tiene: "NA", nota: "" };
+
+                const baseTotal = sumZonaExamen(blocksByStage, "Fase 1")
+                    + sumZonaExamen(blocksByStage, "Fase 2")
+                    + sumZonaExamen(blocksByStage, "Fase Final");
+                const needsRecovery1 = baseTotal < 61;
+
+                if (stageName === "Recuperacion1") {
+                    return needsRecovery1 ? { tiene: "No", nota: "" } : { tiene: "NA", nota: "" };
                 }
 
-                return { tiene: "No", nota: "" };
+                // Recuperacion2: solo se sabe cuando Recuperacion1 ya tiene resultado
+                if (!needsRecovery1) return { tiene: "NA", nota: "" };
+
+                const r1Blocks = blocksByStage.get("Recuperacion1") || [];
+                const r1Numeric = r1Blocks.find(x => x && hasNumericScore(x.score));
+                const r1NSP = r1Blocks.some(x => x && x.nsp === true);
+
+                if (r1NSP && !r1Numeric) return { tiene: "No", nota: "" };
+                if (r1Numeric) {
+                    // La nota de recuperación sustituye el bloque completo de Fase Final
+                    const totalConR1 = sumZonaExamen(blocksByStage, "Fase 1")
+                        + sumZonaExamen(blocksByStage, "Fase 2")
+                        + Number(r1Numeric.score);
+                    return totalConR1 < 61 ? { tiene: "No", nota: "" } : { tiene: "NA", nota: "" };
+                }
+
+                // Recuperacion1 sigue pendiente: aún no se sabe si necesitará la 2
+                return { tiene: "NA", nota: "" };
             }
 
             function orderByPreference(keys, preferenceOrder) {
@@ -224,8 +290,8 @@
                     "Fase 2": regularStageInfo(blocksByStage, "Fase 2", isPractical, isDropout, dropoutLabel),
                     "Extraordinaria 2": extraordinaryStageInfo(blocksByStage, "Fase 2", isPractical, isDropout),
                     "Fase Final": regularStageInfo(blocksByStage, "Fase Final", isPractical, isDropout, dropoutLabel),
-                    "Recuperacion1": recoveryStageInfo(blocksByStage, "Recuperacion1", isPractical),
-                    "Recuperacion2": recoveryStageInfo(blocksByStage, "Recuperacion2", isPractical),
+                    "Recuperacion1": recoveryStageInfo(blocksByStage, "Recuperacion1", isPractical, isDropout),
+                    "Recuperacion2": recoveryStageInfo(blocksByStage, "Recuperacion2", isPractical, isDropout),
                     "Seminario": singleStageInfo(blocksByStage, "Seminario", isPractical, true, isDropout, dropoutLabel),
                     "Plan Práctico": singleStageInfo(blocksByStage, "Plan Práctico", isPractical, true, isDropout, dropoutLabel),
                     "Desarrollo": singleStageInfo(blocksByStage, "Desarrollo", isPractical, true, isDropout, dropoutLabel),
@@ -292,7 +358,8 @@
                 [...regularStages, ...practicalStages].forEach(stage => {
                     const esperados = group.fases_esperadas[stage] || 0;
                     const ingresados = group.fases_ingresadas[stage] || 0;
-                    const porcentaje = esperados > 0 ? (ingresados / esperados) * 100 : 0;
+                    // Truncar (no redondear) para que 100.00% solo aparezca cuando esten todas las notas
+                    const porcentaje = esperados > 0 ? Math.floor((ingresados / esperados) * 10000) / 100 : 0;
                     row[stage] = porcentaje.toFixed(2) + "% <br><small>(hay " + ingresados + " de " + esperados + ")</small>";
                 });
 

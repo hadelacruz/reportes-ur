@@ -204,38 +204,157 @@
                     };
                 }
 
+                function sumZonaExamen(stageName) {
+                    const blocks = blocksByStage.get(stageName) || [];
+                    let total = 0;
+                    blocks.forEach(x => {
+                        if (x && (x.name === "Zona" || x.name === "Examen") && hasNumericScore(x.score)) {
+                            total += Number(x.score);
+                        }
+                    });
+                    return total;
+                }
+
+                // El stage de recuperación solo se crea en crs_score.setup cuando el
+                // catedrático ingresa un valor. Para los pendientes (sin stage aún) la
+                // asignación se calcula con la regla del 61: va a Recuperacion1 si con
+                // Fase Final resuelta la suma Zona+Examen de las 3 fases no llega a 61
+                // (un NSP solo aporta 0 a la suma; si aun así llega a 61, ganó y no va).
+                // Va a Recuperacion2 si Recuperacion1 quedó en NSP o su nota (sustituye
+                // al bloque de Fase Final, sobre 40) sigue sin llegar a 61.
                 function recoveryStageInfo(stageName) {
                     if (isPracticalCourse) return {
                         tiene: "NA",
                         nota: ""
                     };
 
+                    const isDropout = row.student_status_code === "B" || row.student_status_code === "D";
                     const stageBlocks = blocksByStage.get(stageName) || [];
-                    const isAssignedToRecovery = stageBlocks.length > 0;
 
-                    if (!isAssignedToRecovery) {
-                        return {
+                    // El stage ya existe en el setup: el alumno está asignado
+                    if (stageBlocks.length > 0) {
+                        const firstNumeric = stageBlocks.find(x => hasNumericScore(x && x.score));
+                        if (firstNumeric) {
+                            return {
+                                tiene: "Si",
+                                nota: firstNumeric.score
+                            };
+                        }
+
+                        // En recuperaciones el flag nsp viene en el propio item
+                        // (name = "Recuperacion1/2"), no en un item aparte name="NSP"
+                        const hasNSP = stageBlocks.some(x => x && x.nsp === true);
+                        if (hasNSP) {
+                            return {
+                                tiene: "Si",
+                                nota: "NSP"
+                            };
+                        }
+
+                        if (isDropout) return {
                             tiene: "NA",
+                            nota: ""
+                        };
+                        return {
+                            tiene: "No",
                             nota: ""
                         };
                     }
 
-                    const firstNumeric = stageBlocks.find(x => hasNumericScore(x && x.score));
+                    // El stage aún no existe: determinar si el alumno debería estar
+                    // asignado (pendiente sin ningún valor ingresado)
+                    if (isDropout) return {
+                        tiene: "NA",
+                        nota: ""
+                    };
 
-                    if (firstNumeric) {
-                        return {
-                            tiene: "Si",
-                            nota: firstNumeric.score
-                        };
+                    const ffBlocks = blocksByStage.get("Fase Final") || [];
+                    const ffNSP = ffBlocks.some(x => x && x.name === "NSP" && x.nsp === true);
+                    const ffSDE = ffBlocks.some(x => x && x.name === "SDE" && x.sde === true);
+                    const ffExam = ffBlocks.find(x => x && x.name === "Examen");
+                    const ffClosed = ffBlocks.some(x => x && x.name === "is_closed" && x.is_closed === true);
+                    const ffResolved = ffClosed || ffNSP || ffSDE || !!(ffExam && hasNumericScore(ffExam.score));
+
+                    // Sin Fase Final resuelta no se sabe si irá a recuperación;
+                    // con SDE no tiene derecho a recuperación
+                    if (!ffResolved || ffSDE) return {
+                        tiene: "NA",
+                        nota: ""
+                    };
+
+                    const baseTotal = sumZonaExamen("Fase 1") + sumZonaExamen("Fase 2") + sumZonaExamen("Fase Final");
+                    const needsRecovery1 = baseTotal < 61;
+
+                    if (stageName === "Recuperacion1") {
+                        return needsRecovery1 ? { tiene: "No", nota: "" } : { tiene: "NA", nota: "" };
                     }
 
-                    const hasNSP = stageBlocks.some(x => x && x.name === "NSP" && x.nsp === true);
-                    if (hasNSP) {
-                        return {
-                            tiene: "Si",
-                            nota: "NSP"
-                        };
+                    // Recuperacion2: solo se sabe cuando Recuperacion1 ya tiene resultado
+                    if (!needsRecovery1) return {
+                        tiene: "NA",
+                        nota: ""
+                    };
+
+                    const r1Blocks = blocksByStage.get("Recuperacion1") || [];
+                    const r1Numeric = r1Blocks.find(x => x && hasNumericScore(x.score));
+                    const r1NSP = r1Blocks.some(x => x && x.nsp === true);
+
+                    if (r1NSP && !r1Numeric) return {
+                        tiene: "No",
+                        nota: ""
+                    };
+                    if (r1Numeric) {
+                        // La nota de recuperación sustituye el bloque completo de Fase Final
+                        const totalConR1 = sumZonaExamen("Fase 1") + sumZonaExamen("Fase 2") + Number(r1Numeric.score);
+                        return totalConR1 < 61 ? { tiene: "No", nota: "" } : { tiene: "NA", nota: "" };
                     }
+
+                    // Recuperacion1 sigue pendiente: aún no se sabe si necesitará la 2
+                    return {
+                        tiene: "NA",
+                        nota: ""
+                    };
+                }
+
+                // El extraordinario no existe como stage propio en crs_score.setup:
+                // aplica cuando la fase base (Fase 1 / Fase 2) tiene NSP=true. Se
+                // considera con nota si el Examen de la fase base fue sobrescrito
+                // con la nota del extraordinario, o si trae extransp=true (el alumno
+                // tampoco se presentó al extraordinario y se cerró como NSP).
+                function extraordinaryStageInfo(baseStageName) {
+                    if (isPracticalCourse) return {
+                        tiene: "NA",
+                        nota: ""
+                    };
+
+                    const isDropout = row.student_status_code === "B" || row.student_status_code === "D";
+                    if (isDropout) return {
+                        tiene: "NA",
+                        nota: ""
+                    };
+
+                    const stageBlocks = blocksByStage.get(baseStageName) || [];
+                    const nsp = stageBlocks.find(x => x.name === "NSP");
+                    const exam = stageBlocks.find(x => x.name === "Examen");
+
+                    const hasNSP = !!(nsp && nsp.nsp === true);
+                    if (!hasNSP) return {
+                        tiene: "NA",
+                        nota: ""
+                    };
+
+                    const hasExam = !!(exam && hasNumericScore(exam.score));
+                    const hasExtransp = !!(nsp && (nsp.extransp === true || nsp.extransp === "true"));
+
+                    if (hasExam) return {
+                        tiene: "Si",
+                        nota: exam.score
+                    };
+
+                    if (hasExtransp) return {
+                        tiene: "Si",
+                        nota: "NSP"
+                    };
 
                     return {
                         tiene: "No",
@@ -246,6 +365,8 @@
                 const f1 = regularStageInfo("Fase 1");
                 const f2 = regularStageInfo("Fase 2");
                 const fF = regularStageInfo("Fase Final");
+                const e1 = extraordinaryStageInfo("Fase 1");
+                const e2 = extraordinaryStageInfo("Fase 2");
                 const r1 = recoveryStageInfo("Recuperacion1");
                 const r2 = recoveryStageInfo("Recuperacion2");
 
@@ -261,9 +382,13 @@
                     fase1_tiene: f1.tiene,
                     fase1_nota: f1.nota,
                     fase1_examen: f1.examen,
+                    extraordinario1_tiene: e1.tiene,
+                    extraordinario1_nota: e1.nota,
                     fase2_tiene: f2.tiene,
                     fase2_nota: f2.nota,
                     fase2_examen: f2.examen,
+                    extraordinario2_tiene: e2.tiene,
+                    extraordinario2_nota: e2.nota,
                     faseFinal_tiene: fF.tiene,
                     faseFinal_nota: fF.nota,
                     faseFinal_examen: fF.examen,
@@ -405,6 +530,14 @@
                     data: "fase1_examen"
                 },
                 {
+                    // "Extraordinario 1: Tiene notas?"
+                    data: "extraordinario1_tiene"
+                },
+                {
+                    // "Extraordinario 1: Nota"
+                    data: "extraordinario1_nota"
+                },
+                {
                     // "Fase 2: Tiene notas?"
                     data: "fase2_tiene"
                 },
@@ -415,6 +548,14 @@
                 {
                     // "Fase 2: Examen"
                     data: "fase2_examen"
+                },
+                {
+                    // "Extraordinario 2: Tiene notas?"
+                    data: "extraordinario2_tiene"
+                },
+                {
+                    // "Extraordinario 2: Nota"
+                    data: "extraordinario2_nota"
                 },
                 {
                     // "Fase Final: Tiene notas?"
