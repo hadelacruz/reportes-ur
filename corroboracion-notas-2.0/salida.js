@@ -449,6 +449,11 @@
                     data: function(row) {
                         return row.course;
                     },
+                }, {
+                    //NIT docente
+                    data: function(row) {
+                        return row.professor_nit;
+                    },
                 }, { //nombre docente
                     data: function(row) {
                         return row.professor;

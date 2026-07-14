@@ -179,6 +179,7 @@
             student_name: (student && student.name) || "Sin nombre",
             student_id_card: (student && student.student_id_card) || "Sin carné",
             student_status_code: (student && student.status_code) || null,
+            professor_nit: (professorSetup && professorSetup.nit) || "",
             professor: professorSetup
               ? ((professorSetup.name || "") + " " + (professorSetup.lastname || "")).trim()
               : "No tiene.",
