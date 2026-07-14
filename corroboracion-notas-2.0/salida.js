@@ -127,7 +127,7 @@
                     isPracticalCourse = seenPracticalStage;
                 }
 
-
+                const isDropout = row.student_status_code === "B" || row.student_status_code === "D";
 
                 function regularStageInfo(stageName) {
                     if (isPracticalCourse) return {
@@ -174,6 +174,14 @@
                         };
                     }
 
+                    // Bajas (B) y fallecidos (D) cuentan siempre como nota ingresada,
+                    // mostrando las notas que tengan registradas
+                    if (isDropout) return {
+                        tiene: "Si",
+                        nota: zoneValue,
+                        examen: examValue
+                    };
+
                     return {
                         tiene: "No",
                         nota: zoneValue,
@@ -197,6 +205,12 @@
                             nota: firstNumeric.score
                         };
                     }
+
+                    // Bajas y fallecidos cuentan siempre como nota ingresada
+                    if (isDropout) return {
+                        tiene: "Si",
+                        nota: ""
+                    };
 
                     return {
                         tiene: "No",

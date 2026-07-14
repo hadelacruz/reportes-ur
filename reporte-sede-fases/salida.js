@@ -96,14 +96,10 @@
                 return Array.from(blocksByStage.keys()).some(stage => PRACTICAL_STAGES.has(stage));
             }
 
-            function regularStageInfo(blocksByStage, stageName, isPractical, isDropout, dropoutLabel) {
+            function regularStageInfo(blocksByStage, stageName, isPractical, isDropout) {
                 if (isPractical) {
                     return { tiene: "NA", nota: "", examen: "" };
                 }
-                if (isDropout) {
-                    return { tiene: "Si", nota: dropoutLabel, examen: dropoutLabel };
-                }
-
                 const stageBlocks = blocksByStage.get(stageName) || [];
                 const zone = stageBlocks.find(x => x.name === "Zona");
                 const exam = stageBlocks.find(x => x.name === "Examen");
@@ -130,13 +126,18 @@
                     return { tiene: "Si", nota: zoneValue, examen: examValue };
                 }
 
+                // Bajas (B) y fallecidos (D) cuentan siempre como nota ingresada,
+                // mostrando las notas que tengan registradas
+                if (isDropout) {
+                    return { tiene: "Si", nota: zoneValue, examen: examValue };
+                }
+
                 return { tiene: "No", nota: zoneValue, examen: examValue };
             }
 
-            function singleStageInfo(blocksByStage, stageName, isPractical, appliesToPractical, isDropout, dropoutLabel) {
+            function singleStageInfo(blocksByStage, stageName, isPractical, appliesToPractical, isDropout) {
                 const applies = appliesToPractical ? isPractical : !isPractical;
                 if (!applies) return { tiene: "NA", nota: "" };
-                if (isDropout) return { tiene: "Si", nota: dropoutLabel };
 
                 const stageBlocks = blocksByStage.get(stageName) || [];
                 const firstValue = stageBlocks.find(x => hasAnyScore(x && x.score));
@@ -144,6 +145,9 @@
                 if (firstValue) {
                     return { tiene: "Si", nota: firstValue.score };
                 }
+
+                // Bajas y fallecidos cuentan siempre como nota ingresada
+                if (isDropout) return { tiene: "Si", nota: "" };
 
                 return { tiene: "No", nota: "" };
             }
@@ -282,21 +286,20 @@
 
                 const isPractical = isPracticalCourse(row, blocksByStage);
                 const isDropout = row.student_status_code === "B" || row.student_status_code === "D";
-                const dropoutLabel = row.student_status_code === "B" ? "BAJA" : row.student_status_code === "D" ? "DESHABILITADO" : "";
 
                 const stageInfo = {
-                    "Fase 1": regularStageInfo(blocksByStage, "Fase 1", isPractical, isDropout, dropoutLabel),
+                    "Fase 1": regularStageInfo(blocksByStage, "Fase 1", isPractical, isDropout),
                     "Extraordinaria 1": extraordinaryStageInfo(blocksByStage, "Fase 1", isPractical, isDropout),
-                    "Fase 2": regularStageInfo(blocksByStage, "Fase 2", isPractical, isDropout, dropoutLabel),
+                    "Fase 2": regularStageInfo(blocksByStage, "Fase 2", isPractical, isDropout),
                     "Extraordinaria 2": extraordinaryStageInfo(blocksByStage, "Fase 2", isPractical, isDropout),
-                    "Fase Final": regularStageInfo(blocksByStage, "Fase Final", isPractical, isDropout, dropoutLabel),
+                    "Fase Final": regularStageInfo(blocksByStage, "Fase Final", isPractical, isDropout),
                     "Recuperacion1": recoveryStageInfo(blocksByStage, "Recuperacion1", isPractical, isDropout),
                     "Recuperacion2": recoveryStageInfo(blocksByStage, "Recuperacion2", isPractical, isDropout),
-                    "Seminario": singleStageInfo(blocksByStage, "Seminario", isPractical, true, isDropout, dropoutLabel),
-                    "Plan Práctico": singleStageInfo(blocksByStage, "Plan Práctico", isPractical, true, isDropout, dropoutLabel),
-                    "Desarrollo": singleStageInfo(blocksByStage, "Desarrollo", isPractical, true, isDropout, dropoutLabel),
-                    "Informe Final": singleStageInfo(blocksByStage, "Informe Final", isPractical, true, isDropout, dropoutLabel),
-                    "Consolidado": singleStageInfo(blocksByStage, "Consolidado", isPractical, true, isDropout, dropoutLabel)
+                    "Seminario": singleStageInfo(blocksByStage, "Seminario", isPractical, true, isDropout),
+                    "Plan Práctico": singleStageInfo(blocksByStage, "Plan Práctico", isPractical, true, isDropout),
+                    "Desarrollo": singleStageInfo(blocksByStage, "Desarrollo", isPractical, true, isDropout),
+                    "Informe Final": singleStageInfo(blocksByStage, "Informe Final", isPractical, true, isDropout),
+                    "Consolidado": singleStageInfo(blocksByStage, "Consolidado", isPractical, true, isDropout)
                 };
 
                 return Object.assign({}, row, {
