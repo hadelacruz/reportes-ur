@@ -187,38 +187,14 @@
                 return total;
             }
 
-            // El stage de recuperación solo se crea en crs_score.setup cuando el
-            // catedrático ingresa un valor. Para los pendientes (sin stage aún) la
-            // asignación se calcula con la regla del 61: va a Recuperacion1 si con
-            // Fase Final resuelta la suma Zona+Examen de las 3 fases no llega a 61
-            // (un NSP solo aporta 0 a la suma; si aun así llega a 61, ganó y no va).
-            // Va a Recuperacion2 si Recuperacion1 quedó en NSP o su nota (sustituye
-            // al bloque de Fase Final, sobre 40) sigue sin llegar a 61.
+            // La asignación a recuperaciones se decide SOLO con la regla del 61;
+            // la existencia del stage en el setup no implica que el alumno la
+            // necesite, porque el módulo puede dejar stages creados y vacíos al
+            // editar notas (p. ej. R2 habilitada cuando R1 iba baja y luego
+            // corregida). El stage solo aporta el resultado (nota o NSP) cuando
+            // la regla dice que la recuperación sí aplica.
             function recoveryStageInfo(blocksByStage, stageName, isPractical, isDropout) {
                 if (isPractical) return { tiene: "NA", nota: "" };
-
-                const stageBlocks = blocksByStage.get(stageName) || [];
-
-                // El stage ya existe en el setup: el alumno está asignado
-                if (stageBlocks.length > 0) {
-                    const firstValue = stageBlocks.find(x => hasAnyScore(x && x.score));
-                    if (firstValue) {
-                        return { tiene: "Si", nota: firstValue.score };
-                    }
-
-                    // En recuperaciones el flag nsp viene en el propio item
-                    // (name = "Recuperacion1/2"), no en un item aparte name="NSP"
-                    const hasNSP = stageBlocks.some(x => x && x.nsp === true);
-                    if (hasNSP) {
-                        return { tiene: "Si", nota: "NSP" };
-                    }
-
-                    if (isDropout) return { tiene: "NA", nota: "" };
-                    return { tiene: "No", nota: "" };
-                }
-
-                // El stage aún no existe: determinar si el alumno debería estar
-                // asignado (pendiente sin ningún valor ingresado)
                 if (isDropout) return { tiene: "NA", nota: "" };
 
                 const ffBlocks = blocksByStage.get("Fase Final") || [];
@@ -235,30 +211,38 @@
                 const baseTotal = sumZonaExamen(blocksByStage, "Fase 1")
                     + sumZonaExamen(blocksByStage, "Fase 2")
                     + sumZonaExamen(blocksByStage, "Fase Final");
-                const needsRecovery1 = baseTotal < 61;
+                if (baseTotal >= 61) return { tiene: "NA", nota: "" };
+
+                // Resultado registrado de una recuperación: nota numérica o NSP
+                // (en recuperaciones el flag nsp viene en el propio item)
+                function recoveryResult(recoveryName) {
+                    const blocks = blocksByStage.get(recoveryName) || [];
+                    const numeric = blocks.find(x => x && hasNumericScore(x.score));
+                    if (numeric) return { done: true, nsp: false, score: Number(numeric.score) };
+                    if (blocks.some(x => x && x.nsp === true)) return { done: true, nsp: true, score: 0 };
+                    return { done: false, nsp: false, score: 0 };
+                }
+
+                const r1 = recoveryResult("Recuperacion1");
 
                 if (stageName === "Recuperacion1") {
-                    return needsRecovery1 ? { tiene: "No", nota: "" } : { tiene: "NA", nota: "" };
+                    if (r1.done) return { tiene: "Si", nota: r1.nsp ? "NSP" : r1.score };
+                    return { tiene: "No", nota: "" };
                 }
 
-                // Recuperacion2: solo se sabe cuando Recuperacion1 ya tiene resultado
-                if (!needsRecovery1) return { tiene: "NA", nota: "" };
+                // Recuperacion2: aplica solo si R1 ya tiene resultado y el total,
+                // con la nota de R1 sustituyendo el bloque de Fase Final (sobre 40),
+                // sigue sin llegar a 61
+                if (!r1.done) return { tiene: "NA", nota: "" };
 
-                const r1Blocks = blocksByStage.get("Recuperacion1") || [];
-                const r1Numeric = r1Blocks.find(x => x && hasNumericScore(x.score));
-                const r1NSP = r1Blocks.some(x => x && x.nsp === true);
+                const totalConR1 = sumZonaExamen(blocksByStage, "Fase 1")
+                    + sumZonaExamen(blocksByStage, "Fase 2")
+                    + r1.score;
+                if (totalConR1 >= 61) return { tiene: "NA", nota: "" };
 
-                if (r1NSP && !r1Numeric) return { tiene: "No", nota: "" };
-                if (r1Numeric) {
-                    // La nota de recuperación sustituye el bloque completo de Fase Final
-                    const totalConR1 = sumZonaExamen(blocksByStage, "Fase 1")
-                        + sumZonaExamen(blocksByStage, "Fase 2")
-                        + Number(r1Numeric.score);
-                    return totalConR1 < 61 ? { tiene: "No", nota: "" } : { tiene: "NA", nota: "" };
-                }
-
-                // Recuperacion1 sigue pendiente: aún no se sabe si necesitará la 2
-                return { tiene: "NA", nota: "" };
+                const r2 = recoveryResult("Recuperacion2");
+                if (r2.done) return { tiene: "Si", nota: r2.nsp ? "NSP" : r2.score };
+                return { tiene: "No", nota: "" };
             }
 
             function orderByPreference(keys, preferenceOrder) {
