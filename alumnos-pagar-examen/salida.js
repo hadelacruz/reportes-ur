@@ -33,6 +33,7 @@
 				{ data: "carne", defaultContent: "N/A" },
 				{ data: "alumno", defaultContent: "N/A" },
 				{ data: "curso", defaultContent: "N/A" },
+				{ data: "profesor_nit", defaultContent: "N/A" },
 				{ data: "profesor", defaultContent: "N/A" },
 				{ data: "aula", defaultContent: "N/A" },
 				{ data: "periodo", defaultContent: "N/A" },

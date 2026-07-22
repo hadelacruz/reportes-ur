@@ -3,6 +3,9 @@
 		const Op = models.Sequelize.Op;
 		const d = req.body.d || {};
 
+		// Punteo mínimo de aprobación: define quién debe llevar recuperación
+		const PASSING_SCORE = 61;
+
 		const branchFilter = String(d.branch || "").trim();
 		const studentCardFilter = String(d.student_card || d.student_id_card || "").trim();
 		const professorFilter = String(d.professor || "").trim();
@@ -98,23 +101,75 @@
 			return !Number.isNaN(Number(str));
 		}
 
-		function getSpecialStageValue(scoreSetup, stageKey) {
-			const stageItems = scoreSetup.filter(item => normalizeStageName(item && item.stage) === stageKey);
-			if (stageItems.length === 0) return "NA";
+		function sumZonaExamen(scoreSetup, stageLabel) {
+			const stageItems = getStageItems(scoreSetup, stageLabel);
+			let total = 0;
+			stageItems.forEach(item => {
+				const itemName = normalizeItemName(item && item.name);
+				if ((itemName === "zona" || itemName === "examen") && hasNumericScore(item.score)) {
+					total += Number(item.score);
+				}
+			});
+			return total;
+		}
 
+		// Resultado ya registrado de una recuperación: nota numérica o NSP
+		// (en recuperaciones el flag nsp viene en el propio item, no en uno aparte)
+		function getRecoveryResult(scoreSetup, recoveryStage) {
+			const stageItems = getStageItems(scoreSetup, recoveryStage);
 			const numericItem = stageItems.find(item => hasNumericScore(item && item.score));
-			if (numericItem) return String(numericItem.score).trim();
+			if (numericItem) {
+				return { done: true, value: String(numericItem.score).trim(), score: Number(numericItem.score) };
+			}
+			if (stageItems.some(item => item && isTruthy(item.nsp))) {
+				return { done: true, value: "NSP", score: 0 };
+			}
+			return { done: false, value: "", score: 0 };
+		}
 
-			const nspItem = stageItems.find(item => item && (item.nsp === true || normalizeStageName(item.name) === "nsp"));
-			if (nspItem) return "NSP";
+		// La asignación a recuperaciones se decide con la regla del punteo mínimo:
+		// la existencia del stage en el setup no implica que el alumno la necesite,
+		// porque el módulo puede dejar stages creados y vacíos al editar notas.
+		// El stage solo aporta el resultado cuando la regla dice que sí aplica.
+		function getRecoveryStageValue(scoreSetup, recoveryStage) {
+			const finalItems = getStageItems(scoreSetup, "Fase Final");
+			const finalNspItem = getStageItemByName(finalItems, "NSP");
+			const finalSdeItem = getStageItemByName(finalItems, "SDE");
+			const finalExamItem = getStageItemByName(finalItems, "Examen");
+			const finalClosedItem = getStageItemByName(finalItems, "is_closed");
 
-			const sdeItem = stageItems.find(item => item && (item.sde === true || normalizeStageName(item.name) === "sde"));
-			if (sdeItem) return "SDE";
+			const finalNSP = !!(finalNspItem && isTruthy(finalNspItem.nsp));
+			const finalSDE = !!(finalSdeItem && isTruthy(finalSdeItem.sde));
+			const finalClosed = !!(finalClosedItem && isTruthy(finalClosedItem.is_closed));
+			const finalResolved = finalClosed || finalNSP || finalSDE || !!(finalExamItem && hasNumericScore(finalExamItem.score));
 
-			const rawItem = stageItems.find(item => item && item.score !== null && item.score !== undefined && String(item.score).trim() !== "");
-			if (rawItem) return String(rawItem.score).trim();
+			// Sin Fase Final resuelta no se sabe si irá a recuperación;
+			// con SDE no tiene derecho a recuperación
+			if (!finalResolved || finalSDE) return "NA";
 
-			return "NA";
+			const baseTotal = sumZonaExamen(scoreSetup, "Fase 1")
+				+ sumZonaExamen(scoreSetup, "Fase 2")
+				+ sumZonaExamen(scoreSetup, "Fase Final");
+			if (baseTotal >= PASSING_SCORE) return "NA";
+
+			const firstRecovery = getRecoveryResult(scoreSetup, "Recuperacion1");
+
+			if (recoveryStage === "Recuperacion1") {
+				return firstRecovery.done ? firstRecovery.value : "PENDIENTE";
+			}
+
+			// Recuperacion2 aplica solo si Recuperacion1 ya tiene resultado y el
+			// total, con esa nota sustituyendo el bloque de Fase Final, sigue bajo
+			// el punteo mínimo
+			if (!firstRecovery.done) return "NA";
+
+			const totalWithFirstRecovery = sumZonaExamen(scoreSetup, "Fase 1")
+				+ sumZonaExamen(scoreSetup, "Fase 2")
+				+ firstRecovery.score;
+			if (totalWithFirstRecovery >= PASSING_SCORE) return "NA";
+
+			const secondRecovery = getRecoveryResult(scoreSetup, "Recuperacion2");
+			return secondRecovery.done ? secondRecovery.value : "PENDIENTE";
 		}
 
 		function getExtraordinaryStageValue(scoreSetup, phaseLabel) {
@@ -129,10 +184,13 @@
 			const examScore = examItem && examItem.score;
 
 			if (extraordinaryNsp) {
+				// La nota del extraordinario sobrescribe el Examen de la fase base
 				if (hasNumericScore(examScore)) return String(examScore).trim();
 				if (sdeItem && isTruthy(sdeItem.sde)) return "SDE";
+				// extransp: el alumno tampoco se presentó al extraordinario y ya se cerró
 				if (isTruthy(nspItem.extransp)) return "NSP";
-				return "NSP";
+				// Aplica al extraordinario y todavía no tiene nada registrado
+				return "PENDIENTE";
 			}
 
 			return "NA";
@@ -144,6 +202,16 @@
 				const parsed = typeof setup === "string" ? JSON.parse(setup) : setup;
 				const name = ((parsed.name || "") + " " + (parsed.lastname || "")).trim();
 				return name || "N/A";
+			} catch (error) {
+				return "N/A";
+			}
+		}
+
+		function parseProfessorNit(setup) {
+			if (!setup) return "N/A";
+			try {
+				const parsed = typeof setup === "string" ? JSON.parse(setup) : setup;
+				return String(parsed.nit || "").trim() || "N/A";
 			} catch (error) {
 				return "N/A";
 			}
@@ -230,13 +298,14 @@
 				carne: student.student_id_card || "N/A",
 				alumno: student.name || "N/A",
 				curso: course.name || "N/A",
+				profesor_nit: parseProfessorNit(professor.setup),
 				profesor: parseProfessorName(professor.setup),
 				aula: classroom.name || "N/A",
 				periodo: period.name || "N/A",
 				extraordinario_1: getExtraordinaryStageValue(scoreSetup, "Fase 1"),
 				extraordinario_2: getExtraordinaryStageValue(scoreSetup, "Fase 2"),
-				recuperacion_1: getSpecialStageValue(scoreSetup, "Recuperacion1"),
-				recuperacion_2: getSpecialStageValue(scoreSetup, "Recuperacion2")
+				recuperacion_1: getRecoveryStageValue(scoreSetup, "Recuperacion1"),
+				recuperacion_2: getRecoveryStageValue(scoreSetup, "Recuperacion2")
 			};
 		}).filter(Boolean);
 
