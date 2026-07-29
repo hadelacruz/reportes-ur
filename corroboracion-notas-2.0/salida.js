@@ -368,6 +368,24 @@
                 const r1 = recoveryStageInfo("Recuperacion1");
                 const r2 = recoveryStageInfo("Recuperacion2");
 
+                // Consolidado de fases regulares: suma de Zona + Examen de las tres
+                // fases. No aplica a cursos prácticos, que llevan su propio Consolidado.
+                const totalFases = isPracticalCourse
+                    ? ""
+                    : sumZonaExamen("Fase 1") + sumZonaExamen("Fase 2") + sumZonaExamen("Fase Final");
+
+                // El consolidado solo es definitivo cuando las tres fases tienen
+                // nota y examen, y los extraordinarios que apliquen ya se resolvieron:
+                // la nota del extraordinario sustituye el Examen de Fase 1 / Fase 2,
+                // así que mientras uno siga pendiente el punteo todavía puede subir.
+                // Hasta entonces el consolidado es parcial y se marca en amarillo.
+                const consolidadoDefinitivo = !isPracticalCourse
+                    && f1.tiene === "Si"
+                    && f2.tiene === "Si"
+                    && fF.tiene === "Si"
+                    && e1.tiene !== "No"
+                    && e2.tiene !== "No";
+
                 const sem = singleNumericStageInfo("Seminario", true);
                 const plan = singleNumericStageInfo("Plan Práctico", true);
                 const des = singleNumericStageInfo("Desarrollo", true);
@@ -390,6 +408,8 @@
                     faseFinal_tiene: fF.tiene,
                     faseFinal_nota: fF.nota,
                     faseFinal_examen: fF.examen,
+                    total_fases: totalFases,
+                    consolidado_definitivo: consolidadoDefinitivo,
 
                     recuperacion1_tiene: r1.tiene,
                     recuperacion1_nota: r1.nota,
@@ -537,8 +557,15 @@
                     data: "extraordinario1_tiene"
                 },
                 {
-                    // "Extraordinario 1: Nota"
-                    data: "extraordinario1_nota"
+                    // "Extraordinario 1: Nota": amarillo mientras esté pendiente
+                    data: "extraordinario1_nota",
+                    createdCell: function(td, cellData, rowData) {
+                        if (rowData && rowData.extraordinario1_tiene === "No") {
+                            td.style.backgroundColor = "#fff3cd";
+                            td.style.color = "#8a6d3b";
+                            td.style.fontWeight = "bold";
+                        }
+                    }
                 },
                 {
                     // "Fase 2: Tiene notas?"
@@ -557,8 +584,15 @@
                     data: "extraordinario2_tiene"
                 },
                 {
-                    // "Extraordinario 2: Nota"
-                    data: "extraordinario2_nota"
+                    // "Extraordinario 2: Nota": amarillo mientras esté pendiente
+                    data: "extraordinario2_nota",
+                    createdCell: function(td, cellData, rowData) {
+                        if (rowData && rowData.extraordinario2_tiene === "No") {
+                            td.style.backgroundColor = "#fff3cd";
+                            td.style.color = "#8a6d3b";
+                            td.style.fontWeight = "bold";
+                        }
+                    }
                 },
                 {
                     // "Fase Final: Tiene notas?"
@@ -571,6 +605,27 @@
                 {
                     // "Fase Final: Examen"
                     data: "faseFinal_examen"
+                },
+                {
+                    // "Consolidado (F1 + F2 + Fase Final)": verde si ya aprueba,
+                    // rojo solo cuando el punteo ya no puede cambiar, amarillo
+                    // mientras falten notas de fases o extraordinarios
+                    data: "total_fases",
+                    createdCell: function(td, cellData, rowData) {
+                        if (cellData === "" || cellData === null || cellData === undefined) return;
+
+                        if (Number(cellData) >= 61) {
+                            td.style.backgroundColor = "#d4f5d4";
+                            td.style.color = "#1f6f1f";
+                        } else if (rowData && rowData.consolidado_definitivo === true) {
+                            td.style.backgroundColor = "#ffd6d6";
+                            td.style.color = "#9f3a38";
+                        } else {
+                            td.style.backgroundColor = "#fff3cd";
+                            td.style.color = "#8a6d3b";
+                        }
+                        td.style.fontWeight = "bold";
+                    }
                 },
                 {
                     // "Recuperacion1: Tiene notas?"

@@ -5,7 +5,33 @@
     <div class="ui top attached tabular menu">
         <a class="item active" data-tab="first">Notas de Estudiantes</a>
     </div>
-    <div class="ui bottom attached tab segment active" data-tab="first" style="overflow-x: auto;">
+    <div class="ui bottom attached tab segment active" data-tab="first">
+        <div class="ui small message" style="margin-bottom: 1em;">
+            <div class="header">Referencia de colores</div>
+            <div style="margin-top: 0.6em; display: flex; flex-wrap: wrap; gap: 1.2em;">
+                <span>
+                    <span style="display:inline-block; width:1em; height:1em; background-color:#d4f5d4; border:1px solid #1f6f1f; vertical-align:middle; margin-right:0.4em;"></span>
+                    <b>Consolidado en verde:</b> punteo de 61 o más (aprobado).
+                </span>
+                <span>
+                    <span style="display:inline-block; width:1em; height:1em; background-color:#ffd6d6; border:1px solid #9f3a38; vertical-align:middle; margin-right:0.4em;"></span>
+                    <b>Consolidado en rojo:</b> punteo menor a 61 y ya no puede cambiar, porque las tres fases tienen nota y examen y no hay extraordinarios pendientes.
+                </span>
+                <span>
+                    <span style="display:inline-block; width:1em; height:1em; background-color:#fff3cd; border:1px solid #8a6d3b; vertical-align:middle; margin-right:0.4em;"></span>
+                    <b>Consolidado en amarillo:</b> punteo parcial, aún faltan notas de alguna fase o de un extraordinario pendiente.
+                </span>
+                <span>
+                    <span style="display:inline-block; width:1em; height:1em; background-color:#fff3cd; border:1px solid #8a6d3b; vertical-align:middle; margin-right:0.4em;"></span>
+                    <b>Extraordinario en amarillo:</b> el alumno aplica al extraordinario y aún no tiene nota ingresada.
+                </span>
+            </div>
+            <p style="margin-top: 0.6em;">
+                El consolidado es la suma de Zona y Examen de Fase 1, Fase 2 y Fase Final; no incluye recuperaciones.
+                Los cursos prácticos no llevan consolidado de fases.
+            </p>
+        </div>
+        <div style="overflow-x: auto;">
         <table class="ui very compact selectable celled striped table" ref="notes_table" style="min-width:100%">
             <thead class="ui inverted grey table">
                 <tr>
@@ -34,6 +60,7 @@
                     <th>Fase Final: Tiene notas?</th>
                     <th>Fase Final: Nota</th>
                     <th>Fase Final: Examen</th>
+                    <th>Consolidado (F1 + F2 + Fase Final)</th>
                     <th>Recuperación 1: Tiene notas?</th>
                     <th>Recuperación 1: Nota</th>
                     <th>Recuperación 2: Tiene notas?</th>
@@ -52,5 +79,6 @@
             </thead>
             <tbody></tbody>
         </table>
+        </div>
     </div>
 </div>
