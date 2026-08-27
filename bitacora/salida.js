@@ -50,7 +50,7 @@
                     //fecha de promesa de pago
                     data: function(row) {
                         let setup = JSON.parse(row.setup)
-                        return setup.payment_promise_date ? setup.payment_promise_date : "No tiene fecha de promesa de pago";
+                        return setup.promise_date ? setup.promise_date : "No tiene fecha de promesa de pago";
                     },
                 }, { //monto
                     data: function(row) {
