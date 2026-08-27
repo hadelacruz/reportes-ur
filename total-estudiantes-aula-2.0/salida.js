@@ -4,7 +4,8 @@
 			result: {
 				details: [],
 				bySection: [],
-				byClassroom: []
+				byClassroom: [],
+				summary: []
 			},
 			loading: true,
 		}
@@ -15,15 +16,22 @@
 		}
 	},
 	methods: {
-			buildDataTable: function(tableRef, dataArray, columns) {
+			buildDataTable: function(tableRef, dataArray, columns, options) {
+				const settings = options || {};
+				const sumColumns = Array.isArray(settings.sumColumns) ? settings.sumColumns : [];
+
 				if (window.jQuery.fn.DataTable.isDataTable(tableRef)) {
 					window.jQuery(tableRef).DataTable().destroy();
 				}
 
 				window.jQuery(tableRef).empty();
-				window.jQuery(tableRef).append("<thead class=\"ui inverted grey table\"><tr>" + columns.map(column => `<th>${column.title}</th>`).join("") + "</tr></thead><tbody></tbody>");
+				let markup = "<thead class=\"ui inverted grey table\"><tr>" + columns.map(column => `<th>${column.title}</th>`).join("") + "</tr></thead><tbody></tbody>";
+				if (sumColumns.length > 0) {
+					markup += "<tfoot><tr>" + columns.map(() => "<th></th>").join("") + "</tr></tfoot>";
+				}
+				window.jQuery(tableRef).append(markup);
 
-				window.jQuery(tableRef).DataTable({
+				const config = {
 					data: Array.isArray(dataArray) ? dataArray : [],
 					columns: columns,
 					columnDefs: [{ targets: "_all", className: "text-center" }],
@@ -36,7 +44,31 @@
 					ordering: true,
 					dom: "lBfrtip",
 					buttons: ["copy", "csv", "excel", "pdf", "print"]
-				});
+				};
+
+				if (sumColumns.length > 0) {
+					config.footerCallback = function() {
+						const api = this.api();
+						const rows = api.rows({ search: "applied" }).data().toArray();
+						columns.forEach(function(column, index) {
+							if (index === 0) {
+								window.jQuery(api.column(index).footer()).html("TOTAL");
+								return;
+							}
+							if (sumColumns.indexOf(column.data) === -1) {
+								window.jQuery(api.column(index).footer()).html("");
+								return;
+							}
+							const total = rows.reduce(function(accumulated, row) {
+								const value = Number(row[column.data]);
+								return accumulated + (isNaN(value) ? 0 : value);
+							}, 0);
+							window.jQuery(api.column(index).footer()).html(total);
+						});
+					};
+				}
+
+				window.jQuery(tableRef).DataTable(config);
 			},
 			buildTables: function(data) {
 				let vm = this;
@@ -44,6 +76,7 @@
 				const details = Array.isArray(payload.details) ? payload.details : [];
 				const bySection = Array.isArray(payload.bySection) ? payload.bySection : [];
 				const byClassroom = Array.isArray(payload.byClassroom) ? payload.byClassroom : [];
+				const summary = Array.isArray(payload.summary) ? payload.summary : [];
 
 				vm.buildDataTable(vm.$refs.detail_table, details, [
 					{ title: "Sede", data: "Sede", defaultContent: "" },
@@ -114,6 +147,22 @@
 					{ title: "Jornada", data: "Jornada", defaultContent: "" },
 					{ title: "Periodo", data: "Periodo", defaultContent: "" }
 				]);
+
+				vm.buildDataTable(vm.$refs.resumen_general_table, summary, [
+					{ title: "Sede", data: "Sede", defaultContent: "" },
+					{ title: "Periodo", data: "Periodo", defaultContent: "" },
+					{ title: "Asignados", data: "Asignados", defaultContent: 0 },
+					{ title: "No asignados (vista grupos)", data: "No asignados (vista grupos)", defaultContent: 0 },
+					{ title: "No asignados (vista de cursos extra)", data: "No asignados (vista de cursos extra)", defaultContent: 0 },
+					{ title: "TOTAL", data: "TOTAL", defaultContent: 0 }
+				], {
+					sumColumns: [
+						"Asignados",
+						"No asignados (vista grupos)",
+						"No asignados (vista de cursos extra)",
+						"TOTAL"
+					]
+				});
 
 				vm.loading = false;
 		}

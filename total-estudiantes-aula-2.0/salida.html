@@ -7,6 +7,7 @@
 		<a class="item" data-tab="second">Alumnos por sección</a>
 		<a class="item" data-tab="third">Alumnos por aula</a>
 		<a class="item" data-tab="fourth">Secciones con menos de 10 alumnos</a>
+		<a class="item" data-tab="fifth">Resumen</a>
 	</div>
 	<div class="ui bottom attached tab segment active" data-tab="first" style="overflow-x: auto;">
 		<table class="ui very compact selectable celled striped table" ref="detail_table" style="min-width:100%">
@@ -95,6 +96,27 @@
 					<th>Ciclo</th>
 					<th>Jornada</th>
 					<th>Periodo</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	</div>
+	<div class="ui bottom attached tab segment" data-tab="fifth" style="overflow-x: auto;">
+		<div class="ui small info message">
+			<div class="header">Cómo se calcula</div>
+			<p>El universo son los alumnos inscritos en la sede y periodo seleccionados, descartando alumnos de baja o fallecidos y carreras de traslado. <b>Asignados</b> y <b>No asignados (vista grupos)</b> cuentan alumnos distintos: un alumno con 2 cursos de pensum pendientes suma 1. <b>No asignados (vista de cursos extra)</b> cuenta cursos, no alumnos, para cuadrar con la vista de cursos extra, que muestra una card por cada par alumno-curso: un alumno con 2 extras pendientes suma 2.</p>
+			<p>Un alumno cuenta en cada columna donde tenga al menos un curso, por lo que el <b>TOTAL</b> no es la cantidad de alumnos distintos: quien tenga pendientes de pensum y de curso extra suma en ambas columnas.</p>
+			<p>Esta pestaña solo aplica los filtros de <b>Sede, Periodo, Carrera, Jornada y Ciclo</b>. Los filtros de aula, curso, catedrático y código de sección se ignoran aquí, porque un alumno pendiente todavía no tiene sección asignada.</p>
+		</div>
+		<table class="ui very compact selectable celled striped table" ref="resumen_general_table" style="min-width:100%">
+			<thead class="ui inverted grey table">
+				<tr>
+					<th>Sede</th>
+					<th>Periodo</th>
+					<th>Asignados</th>
+					<th>No asignados (vista grupos)</th>
+					<th>No asignados (vista de cursos extra)</th>
+					<th>TOTAL</th>
 				</tr>
 			</thead>
 			<tbody></tbody>

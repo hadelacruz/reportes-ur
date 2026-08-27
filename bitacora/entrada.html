@@ -1,0 +1,91 @@
+<div class="ui form" ref="form">
+    <div class="fields">
+        <div class="six wide field">
+            <label>Estudiante</label>
+            <div class="ui search" ref="search">
+                <div class="ui icon input">
+                    <input class="prompt" type="text" placeholder="Búsqueda de estudiante">
+                    <i class="search icon"></i>
+                </div>
+                <div class="results"></div>
+            </div>
+        </div>
+        <div class="six wide field">
+            <label>Tipificación</label>
+            <div class="ui fluid multiple search selection dropdown" ref="log_type_dropdown">
+                <input type="hidden" name="log_type">
+                <i class="dropdown icon"></i>
+                <div class="default text">Seleccione</div>
+                <div class="menu"></div>
+            </div>
+        </div>
+        <div class="four wide field">
+            <label>Fecha de Creación</label>
+            <div class="ui calendar" ref="creationdate">
+                <div class="ui input left icon">
+                    <i class="calendar icon"></i>
+                    <input type="text" placeholder="Fecha de creación" />
+                </div>
+            </div>
+        </div>
+        <!--sede, curso, catedratico, jornada y ciclo de estudio
+        <div class="ten wide field">
+            <label>Carrera</label>
+            <div class="ui fluid multiple search selection dropdown" ref="carreer_dropdown">
+                <input type="hidden" name="carreer">
+                <i class="dropdown icon"></i>
+                <div class="default text">Seleccione</div>
+                <div class="menu"></div>
+            </div>
+        </div>-->
+    </div>
+    <div class="fields">
+        <!--<div class="six wide field">
+            <label>Sede</label>
+            <div class="ui fluid multiple search selection dropdown" ref="branch_dropdown">
+                <input type="hidden" name="branch">
+                <i class="dropdown icon"></i>
+                <div class="default text">Seleccione</div>
+                <div class="menu">
+                </div>
+            </div>
+        </div>-->
+        <div class="six wide field">
+            <label>Usuario</label>
+            <div class="ui fluid multiple search selection dropdown" ref="user_dropdown">
+                <input type="hidden" name="user">
+                <i class="dropdown icon"></i>
+                <div class="default text">Seleccione</div>
+                <div class="menu">
+                </div>
+            </div>
+        </div>
+        <div class="five wide field">
+            <label>Fecha inicial</label>
+            <div class="ui calendar" ref="rangestart">
+                <div class="ui input left icon">
+                    <i class="calendar icon"></i>
+                    <input type="text" placeholder="Fecha inicial" />
+                </div>
+            </div>
+        </div>
+        <div class="five wide field">
+            <label>Fecha final</label>
+            <div class="ui calendar" ref="rangeend">
+                <div class="ui input left icon">
+                    <i class="calendar icon"></i>
+                    <input type="text" placeholder="Fecha final" />
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="fields">
+        <div class="five wide field">
+            <label>Buscar</label>
+            <div class="ui blue fluid icon labeled button" @click="submit">
+                <i class="check icon"></i> Consultar
+            </div>
+        </div>
+    </div>
+</div>

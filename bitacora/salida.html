@@ -1,0 +1,25 @@
+<div class="ui segment">
+    <div v-if="loading" class="ui active inverted dimmer">
+        <div class="ui large text loader">Cargando...</div>
+    </div>
+    <div class="ui top attached tabular menu">
+        <a class="item active" data-tab="first">Bitácora</a>
+    </div>
+    <div class="ui bottom attached tab segment active" data-tab="first" style="overflow-x: auto;">
+        <table class="ui very compact selectable celled striped table" ref="logs_table" style="width:100%">
+            <thead class="ui inverted grey table">
+                <tr>
+                    <th>Nombre del Estudiante</th>
+                    <th>Carné del Estudiante</th>
+                    <th>Tipificación</th>
+                    <th>Comentario</th>
+                    <th>Fecha de Promesa de Pago</th>
+                    <th>Monto (Q)</th>
+                    <th>Fecha y Hora de Creación</th>
+                    <th>Usuario</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
