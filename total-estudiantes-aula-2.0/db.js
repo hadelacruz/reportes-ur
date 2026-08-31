@@ -273,8 +273,21 @@
 			const profesorCode = (professorSetup && professorSetup.professor_code) || "N/A";
 
 			const codigoSeccion = codigoSeccionActual;
+			const professorId = (section && section.professor_id) || null;
+			const hasProfessor = professorId !== null && professorId !== undefined && professorId !== "";
+			const dayIndexValue = (sectionSetup && sectionSetup.day_index != null && sectionSetup.day_index !== "") ? sectionSetup.day_index : "N/A";
+			const horarioName = (sectionSetup && sectionSetup.schedule) || "N/A";
 
-			const groupKey = [classroomId || "", courseId || "", branchId || "", periodId || ""].join("|");
+			// La regla de negocio trata como la MISMA sección a las secciones que
+			// comparten profesor, día, horario y curso (dentro de la misma sede y
+			// periodo), aunque estén repartidas en aulas distintas (aulas hermanas).
+			// Por eso "Aula" y "Codigo de Sección" ya no forman parte de la clave.
+			// Si NO tienen profesor asignado (pendiente) no se unifican: cada aula
+			// queda separada, porque no hay catedrático que confirme que es la
+			// misma clase.
+			const groupKey = hasProfessor
+				? [branchId || "", periodId || "", courseId || "", professorId, dayIndexValue, horarioName].join("|")
+				: [branchId || "", periodId || "", courseId || "", "sin-catedratico", classroomId || "", dayIndexValue, horarioName].join("|");
 			const aulaGroupKey = [classroomId || "", branchId || "", periodId || ""].join("|");
 
 			details.push({
@@ -294,16 +307,16 @@
 
 			if (!grouped.has(groupKey)) {
 				grouped.set(groupKey, {
-					Aula: classroomName,
-					aulaGroupKey: aulaGroupKey,
 					Curso: courseName,
 					Sede: branchName,
-					"Codigo de Sección": codigoSeccion,
 					Periodo: periodName,
 					"Codigo Catedratico": profesorCode,
 					"Nombre de catedrático": professorName,
 					"Ciclo de estudio": studyingCycleName,
 					Jornada: studyingTimeName,
+					Horario: horarioName,
+					aulas: new Set(),
+					sectionCodes: new Set(),
 					careers: new Set(),
 					studentIds: new Set(),
 					totalGeneral: 0,
@@ -320,6 +333,8 @@
 			if (studentStatusCode === "S") groupItem.suspendidos += 1;
 			if (studentStatusCode === "B") groupItem.baja += 1;
 			if (studentStatusCode === "D") groupItem.fallecido += 1;
+			groupItem.aulas.add(classroomName);
+			groupItem.sectionCodes.add(codigoSeccion);
 			groupItem.careers.add(careerName);
 			groupItem.studentIds.add(pre.student_id);
 
@@ -391,11 +406,11 @@
 		});
 
 		const bySection = Array.from(grouped.values()).map(item => ({
-			Aula: item.Aula,
+			Aula: Array.from(item.aulas).sort((left, right) => String(left).localeCompare(String(right), "es")).join(", "),
 			Carrera: Array.from(item.careers).sort((left, right) => String(left).localeCompare(String(right), "es")).join(", "),
 			Curso: item.Curso,
 			Sede: item.Sede,
-			"Codigo de Sección": item["Codigo de Sección"],
+			"Codigo de Sección": Array.from(item.sectionCodes).sort((left, right) => String(left).localeCompare(String(right), "es")).join(", "),
 			Activos: item.activos,
 			Suspendidos: item.suspendidos,
 			"De baja": item.baja,
@@ -405,6 +420,7 @@
 			"Nombre de catedrático": item["Nombre de catedrático"],
 			"Ciclo de estudio": item["Ciclo de estudio"],
 			Jornada: item.Jornada,
+			Horario: item.Horario,
 			Periodo: item.Periodo
 		})).sort((left, right) => {
 			const sedeCompare = String(left.Sede).localeCompare(String(right.Sede), "es");

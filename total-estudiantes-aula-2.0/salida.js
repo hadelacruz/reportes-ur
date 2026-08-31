@@ -108,6 +108,7 @@
 					{ title: "Catedrático", data: "Nombre de catedrático", defaultContent: "" },
 					{ title: "Ciclo de estudio", data: "Ciclo de estudio", defaultContent: "" },
 					{ title: "Jornada", data: "Jornada", defaultContent: "" },
+					{ title: "Horario", data: "Horario", defaultContent: "" },
 					{ title: "Periodo", data: "Periodo", defaultContent: "" }
 				]);
 
