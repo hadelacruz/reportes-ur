@@ -421,7 +421,10 @@
 			"Ciclo de estudio": item["Ciclo de estudio"],
 			Jornada: item.Jornada,
 			Horario: item.Horario,
-			Periodo: item.Periodo
+			Periodo: item.Periodo,
+			// Marca las filas armadas a partir de 2+ aulas hermanas (mismo profesor,
+			// día, horario y curso), para resaltarlas en la tabla del front.
+			_unified: item.aulas.size > 1
 		})).sort((left, right) => {
 			const sedeCompare = String(left.Sede).localeCompare(String(right.Sede), "es");
 			if (sedeCompare !== 0) return sedeCompare;

@@ -19,6 +19,8 @@
 			buildDataTable: function(tableRef, dataArray, columns, options) {
 				const settings = options || {};
 				const sumColumns = Array.isArray(settings.sumColumns) ? settings.sumColumns : [];
+				const rowHighlightField = settings.rowHighlightField;
+				const rowHighlightClass = settings.rowHighlightClass || "warning";
 
 				if (window.jQuery.fn.DataTable.isDataTable(tableRef)) {
 					window.jQuery(tableRef).DataTable().destroy();
@@ -45,6 +47,14 @@
 					dom: "lBfrtip",
 					buttons: ["copy", "csv", "excel", "pdf", "print"]
 				};
+
+				if (rowHighlightField) {
+					config.createdRow = function(row, data) {
+						if (data && data[rowHighlightField]) {
+							window.jQuery(row).addClass(rowHighlightClass);
+						}
+					};
+				}
 
 				if (sumColumns.length > 0) {
 					config.footerCallback = function() {
@@ -110,7 +120,10 @@
 					{ title: "Jornada", data: "Jornada", defaultContent: "" },
 					{ title: "Horario", data: "Horario", defaultContent: "" },
 					{ title: "Periodo", data: "Periodo", defaultContent: "" }
-				]);
+				], {
+					rowHighlightField: "_unified",
+					rowHighlightClass: "warning"
+				});
 
 				vm.buildDataTable(vm.$refs.resumen_table, byClassroom, [
 					{ title: "Sede", data: "Sede", defaultContent: "" },
