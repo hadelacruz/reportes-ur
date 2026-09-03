@@ -1,0 +1,151 @@
+{
+    data: function() {
+        return {
+            api_url: "https://api_modul.uregional.net",
+            user_branch: undefined,
+            branch: undefined,
+            career: undefined,
+            period: undefined,
+            studentUuids: undefined,
+        }
+    },
+    methods: {},
+    created: function() {
+        let _v = this;
+
+        let token = vm.$session.get("token");
+        let headers = null;
+        if (token) {
+            headers = {
+                headers: {
+                    "x-access-token": token
+                }
+            };
+        }
+        _v.$http.post(`${_v.api_url}/course/season/do-get-user-branch`, {}, headers).then(rspnse => {
+            if (rspnse.status == 200) {
+                let rsp = rspnse.data;
+                if (!rsp.success) console.error(rsp.error);
+                else {
+                    if (rsp.data) _v.user_branch = rsp.data.branch_id;
+                }
+            }
+        });
+    },
+    mounted: function() {
+        let _v = this;
+
+        let token = vm.$session.get("token");
+        let headers = null;
+        if (token) {
+            headers = {
+                headers: {
+                    "x-access-token": token
+                }
+            };
+        }
+
+        // Select de alumno: dropdown normal (misma dinámica que sede/carrera/periodo,
+        // se puede quitar con el ícono "x"), pero con datos remotos: al hacer clic
+        // (minCharacters: 0) trae un preview de estudiantes sin necesidad de escribir,
+        // y se puede escribir nombre, apellido o carné para filtrar esa búsqueda.
+        window.jQuery(_v.$refs.student_dropdown).dropdown({
+            minCharacters: 0,
+            saveRemoteData: true,
+            apiSettings: {
+                action: "search student",
+                beforeXHR: function(xhr) {
+                    let token = _v.$session.get("token");
+                    if (token) {
+                        xhr.setRequestHeader("x-access-token", token);
+                    }
+
+                    return xhr;
+                },
+                onResponse: function(response) {
+                    if (!response.success) {
+                        console.error(response.error);
+                        return {
+                            results: []
+                        };
+                    }
+
+                    return {
+                        results: (response.data || []).map(r => {
+                            return {
+                                name: r.student_id_card ? `${r.name} - ${r.student_id_card}` : r.name,
+                                value: r.uuid
+                            };
+                        })
+                    };
+                }
+            },
+            onChange: function(value) {
+                _v.studentUuids = value;
+            }
+        });
+
+        window.jQuery(_v.$refs.form).addClass("loading");
+        _v.$http.post(`${_v.api_url}/student_configuration/do-get-configuration`, {}, headers).then(rspnse => {
+            if (rspnse.status == 200) {
+                let rsp = rspnse.data;
+                if (!rsp.success) console.error(rsp.error);
+                else {
+                    //si hay rsp.data.std_branches, entonces branches es el mapeo de eso
+                    let branches = rsp.data.std_branches ? rsp.data.std_branches.map(b => {
+                        return {
+                            value: b.branch_id,
+                            name: b.name
+                        };
+                    }) : [];
+                    let carreers = rsp.data.std_careers ? rsp.data.std_careers.map(b => {
+                        return {
+                            value: b.career_id,
+                            name: b.name
+                        };
+                    }) : [];
+
+                    let periods = rsp.data.std_periods ? rsp.data.std_periods.map(b => {
+                        return {
+                            value: b.period_id,
+                            name: b.name
+                        };
+                    }) : [];
+
+                    window.jQuery(_v.$refs.branch_dropdown).dropdown({
+                        onChange: function(value) {
+                            _v.branch = value;
+                        }
+                    }).dropdown("setup menu", {
+                        values: branches
+                    });
+                    if (_v.user_branch) {
+                        window.jQuery(_v.$refs.branch_dropdown).addClass("disabled").dropdown("set selected", _v.user_branch);
+                    }
+
+                    window.jQuery(_v.$refs.carreer_dropdown).dropdown({
+                        onChange: function(value) {
+                            _v.career = value;
+                        }
+                    }).dropdown("setup menu", {
+                        values: carreers
+                    });
+
+                    window.jQuery(_v.$refs.period_dropdown).dropdown({
+                        onChange: function(value) {
+                            _v.period = value;
+                        }
+                    }).dropdown("setup menu", {
+                        values: periods
+                    });
+                }
+            } else {
+                console.error(rspnse);
+            }
+        }).catch(err => {
+            console.error(err);
+        }).finally(() => {
+            window.jQuery(_v.$refs.form).removeClass("loading");
+        });
+    }
+}

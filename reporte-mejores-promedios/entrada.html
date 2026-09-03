@@ -1,0 +1,47 @@
+<div class="ui form" ref="form">
+    <div class="fields">
+        <div class="four wide field">
+            <label>Sede</label>
+            <div class="ui fluid multiple search selection dropdown" ref="branch_dropdown">
+                <input type="hidden" name="branch">
+                <i class="dropdown icon"></i>
+                <div class="default text">Seleccione</div>
+                <div class="menu"></div>
+            </div>
+        </div>
+        <div class="four wide field">
+            <label>Carrera</label>
+            <div class="ui fluid multiple search selection dropdown" ref="carreer_dropdown">
+                <input type="hidden" name="carreer">
+                <i class="dropdown icon"></i>
+                <div class="default text">Seleccione</div>
+                <div class="menu"></div>
+            </div>
+        </div>
+        <div class="four wide field">
+            <label>Periodo</label>
+            <div class="ui fluid multiple search selection dropdown" ref="period_dropdown">
+                <input type="hidden" name="period">
+                <i class="dropdown icon"></i>
+                <div class="default text">Seleccione</div>
+                <div class="menu"></div>
+            </div>
+        </div>
+        <div class="four wide field">
+            <label>Alumno</label>
+            <div class="ui fluid multiple search selection dropdown" ref="student_dropdown">
+                <input type="hidden" name="student">
+                <i class="dropdown icon"></i>
+                <div class="default text">Buscar por nombre o carné</div>
+                <div class="menu"></div>
+            </div>
+        </div>
+    </div>
+    <div class="fields">
+        <div class="four wide field">
+            <div class="ui blue fluid icon labeled button" @click="submit">
+                <i class="check icon"></i> Consultar
+            </div>
+        </div>
+    </div>
+</div>

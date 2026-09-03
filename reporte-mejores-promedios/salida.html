@@ -1,0 +1,26 @@
+<div class="ui segment">
+    <div v-if="loading" class="ui active inverted dimmer">
+        <div class="ui large text loader">Cargando...</div>
+    </div>
+    <div class="ui top attached tabular menu">
+        <a class="item active" data-tab="first">Mejores Promedios</a>
+    </div>
+    <div class="ui bottom attached tab segment active" data-tab="first" style="overflow-x: auto;">
+        <table class="ui very compact selectable celled striped table" ref="notes_table" style="min-width:100%">
+            <thead class="ui inverted grey table">
+                <tr>
+                    <th>Top</th>
+                    <th>Nombre del Estudiante</th>
+                    <th>Carné del Estudiante</th>
+                    <th>Carrera</th>
+                    <th>Sede</th>
+                    <th>Jornada</th>
+                    <th>Ciclo de estudio</th>
+                    <th>Periodo/Temporada</th>
+                    <th>Promedio del Estudiante</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
