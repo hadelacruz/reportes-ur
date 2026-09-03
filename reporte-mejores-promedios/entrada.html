@@ -28,6 +28,17 @@
             </div>
         </div>
         <div class="four wide field">
+            <label>Semestre</label>
+            <div class="ui fluid multiple search selection dropdown" ref="studying_cycle_dropdown">
+                <input type="hidden" name="studying_cycle">
+                <i class="dropdown icon"></i>
+                <div class="default text">Seleccione</div>
+                <div class="menu"></div>
+            </div>
+        </div>
+    </div>
+    <div class="fields">
+        <div class="six wide field">
             <label>Alumno</label>
             <div class="ui fluid multiple search selection dropdown" ref="student_dropdown">
                 <input type="hidden" name="student">
@@ -36,9 +47,7 @@
                 <div class="menu"></div>
             </div>
         </div>
-    </div>
-    <div class="fields">
-        <div class="four wide field">
+        <div class="four wide field" style="display:flex; align-items:flex-end;">
             <div class="ui blue fluid icon labeled button" @click="submit">
                 <i class="check icon"></i> Consultar
             </div>

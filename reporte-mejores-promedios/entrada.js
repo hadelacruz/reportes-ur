@@ -6,6 +6,7 @@
             branch: undefined,
             career: undefined,
             period: undefined,
+            studying_cycle: undefined,
             studentUuids: undefined,
         }
     },
@@ -112,6 +113,13 @@
                         };
                     }) : [];
 
+                    let studying_cycles = rsp.data.std_studying_cycles ? rsp.data.std_studying_cycles.map(b => {
+                        return {
+                            value: b.studying_cycle_id,
+                            name: b.name
+                        };
+                    }) : [];
+
                     window.jQuery(_v.$refs.branch_dropdown).dropdown({
                         onChange: function(value) {
                             _v.branch = value;
@@ -137,6 +145,14 @@
                         }
                     }).dropdown("setup menu", {
                         values: periods
+                    });
+
+                    window.jQuery(_v.$refs.studying_cycle_dropdown).dropdown({
+                        onChange: function(value) {
+                            _v.studying_cycle = value;
+                        }
+                    }).dropdown("setup menu", {
+                        values: studying_cycles
                     });
                 }
             } else {

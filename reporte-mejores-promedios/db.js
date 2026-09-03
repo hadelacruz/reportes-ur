@@ -26,7 +26,8 @@ async function getPreinscriptionsForStudents(studentIds, filters) {
     const hasInscriptionFilter = !!(
         inscCondition.period_id ||
         inscCondition.branch_id ||
-        inscCondition.career_id
+        inscCondition.career_id ||
+        inscCondition.studying_cycle_id
     );
 
     models.std_inscription.belongsTo(models.std_period, {
@@ -188,6 +189,7 @@ async function getStudentPreinscriptions(req, res) {
         if (req.body.d.period) inscCondition.period_id = req.body.d.period.split(",");
         if (req.body.d.branch) inscCondition.branch_id = condition.branch_id = req.body.d.branch.split(",");
         if (req.body.d.career) inscCondition.career_id = condition.career_id = req.body.d.career.split(",");
+        if (req.body.d.studying_cycle) inscCondition.studying_cycle_id = condition.studying_cycle_id = req.body.d.studying_cycle.split(",");
 
         // Select único de alumnos: busca por nombre/apellido o carné y permite selección
         // múltiple, se filtra por el uuid (columna real y única en std_student).
