@@ -92,6 +92,11 @@
                     if (row.is_rejected) return '<span class="ui red horizontal label">Rechazada</span>';
                     return '<span class="ui yellow horizontal label">Sin revisión</span>';
                 },
+            }, {
+                // Comentario (solo existe cuando el acta fue rechazada)
+                data: function(row) {
+                    return row.comment || "-";
+                },
             },
         ]
 

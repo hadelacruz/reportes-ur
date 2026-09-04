@@ -49,6 +49,7 @@ async function getRecordsStatusData(filters) {
             "create_date",
             "is_verified",
             "is_rejected",
+            "rejection_reason",
             "section_id",
             // Estos 4 no se usan para filtrar/mostrar sede-carrera-catedrático
             // (eso viene del aula/sección), pero SÍ hacen falta para saber
@@ -217,6 +218,7 @@ async function getRecordsStatusReport(req, res) {
                 create_date: r.create_date,
                 is_verified: !!r.is_verified,
                 is_rejected: !!r.is_rejected,
+                comment: r.rejection_reason || null,
                 branch: classroom.std_branch ? classroom.std_branch.name : null,
                 career: careers.length
                     ? careers.map((c) => (c.std_career ? c.std_career.name : null)).filter(Boolean).join(", ")
