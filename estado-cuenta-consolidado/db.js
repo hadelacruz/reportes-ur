@@ -28,31 +28,28 @@ models.std_inscription.belongsTo(models.std_student, {
     foreignKey: "student_id"
 });
 
-//ERROR POR ACA-------------
-models.std_student.belongsTo(models.std_account, {
+function ensureAssociation(SourceModel, method, TargetModel, options) {
+    if (!SourceModel.associations[options.as]) {
+        SourceModel[method](TargetModel, options);
+    }
+}
+
+ensureAssociation(models.std_student, "belongsTo", models.std_account, {
+    as: "std_account",
     foreignKey: "student_id",
     targetKey: "student_id"
 });
-models.std_account.belongsTo(models.acc_account, {
+ensureAssociation(models.std_account, "belongsTo", models.acc_account, {
+    as: "acc_account",
     foreignKey: "account_id",
     targetKey: "account_id"
 });
-models.acc_account.hasMany(models.std_account_movement, {
+ensureAssociation(models.acc_account, "hasMany", models.std_account_movement, {
+    as: "std_account_movements",
     foreignKey: "account_id",
     targetKey: "account_id"
 });
-/*
-models.std_student.hasMany(models.std_account, {
-    foreignKey: "student_id"
-});
-models.std_account.belongsTo(models.acc_account, {
-    foreignKey: "account_id",
-    targetKey: "account_id"
-});
-models.std_account_movement.belongsTo(models.acc_account, {
-    foreignKey: "account_id"
-});
-*/
+
 let whereFields = models.Sequelize.where(
     models.Sequelize.col(
         "std_student->std_account->acc_account->std_account_movements.period_id",
@@ -94,12 +91,15 @@ models.std_inscription.findAll({
             },
             include: [{
                 model: models.std_account,
+                as: "std_account",
                 required: true,
                 include: [{
                     model: models.acc_account,
+                    as: "acc_account",
                     required: true,
                     include: [{
                         model: models.std_account_movement,
+                        as: "std_account_movements",
                         attributes: ["amount", "paid"],
                         required: true,
                         where: condMovement
