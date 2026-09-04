@@ -38,12 +38,12 @@
                 })
                 .filter(row => row !== null);
 
-            // Paso 2: Agrupar por sede + carrera + período + estudiante
-            // (todos los cursos del estudiante en esa sede/carrera/período van a un solo promedio,
-            //  aunque estén repartidos en varias aulas)
+            // Paso 2: Agrupar por sede + carrera + período + semestre + estudiante
+            // (todos los cursos del estudiante en esa sede/carrera/período/semestre van a un
+            //  solo promedio, aunque estén repartidos en varias aulas)
             let agrupado = {};
             for (let row of vm.result) {
-                let key = `${row.branch}_${row.career}_${row.period}_${row.student_id}`;
+                let key = `${row.branch}_${row.career}_${row.period}_${row.studying_cycle}_${row.student_id}`;
                 if (!agrupado[key]) {
                     agrupado[key] = {
                         student_id: row.student_id,
@@ -72,15 +72,17 @@
                 };
             });
 
-            // Paso 4: Agrupar por sede + carrera + período y quedarse con los 3 mejores
-            // promedios de cada grupo. Como el filtrado (sede/carrera/período) ya ocurrió
-            // en la consulta, esto resuelve solo:
-            // - sin filtrar sede: salen los 3 mejores de cada sede (y carrera y período).
+            // Paso 4: Agrupar por sede + carrera + período + semestre y quedarse con los 3
+            // mejores promedios de cada grupo. Como el filtrado (sede/carrera/período/semestre)
+            // ya ocurrió en la consulta, esto resuelve solo:
+            // - sin filtrar sede: salen los 3 mejores de cada sede (y carrera, período y semestre).
             // - filtrando solo sede: salen los 3 mejores de cada carrera de esa sede.
-            // - filtrando sede y carrera: sale un solo grupo -> 3 registros.
+            // - filtrando sede, carrera y período (sin semestre): salen los 3 mejores de
+            //   cada semestre (primer semestre, segundo semestre, etc.) de ese grupo.
+            // - filtrando sede, carrera, período y semestre: sale un solo grupo -> 3 registros.
             let porGrupo = {};
             for (let entry of promedios) {
-                let groupKey = `${entry.branch}_${entry.career}_${entry.period}`;
+                let groupKey = `${entry.branch}_${entry.career}_${entry.period}_${entry.studying_cycle}`;
                 if (!porGrupo[groupKey]) porGrupo[groupKey] = [];
                 porGrupo[groupKey].push(entry);
             }
@@ -150,11 +152,6 @@
                     //Sede
                     data: function(row) {
                         return row.branch;
-                    },
-                }, {
-                    //Jornada
-                    data: function(row) {
-                        return row.studying_time;
                     },
                 },
                 {

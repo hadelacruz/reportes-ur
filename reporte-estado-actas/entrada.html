@@ -1,0 +1,97 @@
+<div class="ui form" ref="form">
+    <div class="fields">
+        <div class="five wide field">
+            <label>Sede</label>
+            <div class="ui fluid multiple search selection dropdown" ref="branch_dropdown">
+                <input type="hidden" name="branch">
+                <i class="dropdown icon"></i>
+                <div class="default text">Seleccione</div>
+                <div class="menu"></div>
+            </div>
+        </div>
+        <div class="five wide field">
+            <label>Periodo</label>
+            <div class="ui fluid multiple search selection dropdown" ref="period_dropdown">
+                <input type="hidden" name="period">
+                <i class="dropdown icon"></i>
+                <div class="default text">Seleccione</div>
+                <div class="menu"></div>
+            </div>
+        </div>
+        <div class="six wide field">
+            <label>Ciclo de Estudio</label>
+            <div class="ui fluid multiple search selection dropdown" ref="studying_cycle_dropdown">
+                <input type="hidden" name="studying_cycle">
+                <i class="dropdown icon"></i>
+                <div class="default text">Seleccione</div>
+                <div class="menu"></div>
+            </div>
+        </div>
+    </div>
+    <div class="fields">
+        <div class="six wide field">
+            <label>Carrera</label>
+            <div class="ui fluid multiple search selection dropdown" ref="career_dropdown">
+                <input type="hidden" name="career">
+                <i class="dropdown icon"></i>
+                <div class="default text">Seleccione</div>
+                <div class="menu"></div>
+            </div>
+        </div>
+        <div class="six wide field">
+            <label>Catedrático</label>
+            <div class="ui fluid multiple search selection dropdown" ref="professor_dropdown">
+                <input type="hidden" name="professor">
+                <i class="dropdown icon"></i>
+                <div class="default text">Seleccione</div>
+                <div class="menu"></div>
+            </div>
+        </div>
+        <div class="four wide field">
+            <label>Tipo de Acta</label>
+            <div class="ui fluid multiple search selection dropdown" ref="record_type_dropdown">
+                <input type="hidden" name="record_type">
+                <i class="dropdown icon"></i>
+                <div class="default text">Seleccione</div>
+                <div class="menu">
+                    <div class="item" data-value="Fase 1">Fase 1</div>
+                    <div class="item" data-value="Fase 2">Fase 2</div>
+                    <div class="item" data-value="final">Fase Final</div>
+                    <div class="item" data-value="Fase Extraordinario 1">Extraordinario 1</div>
+                    <div class="item" data-value="Fase Extraordinario 2">Extraordinario 2</div>
+                    <div class="item" data-value="Recuperacion 1">Recuperación 1</div>
+                    <div class="item" data-value="Recuperacion 2">Recuperación 2</div>
+                    <div class="item" data-value="Cursos Practicos, Practicas, Práctico">Cursos Prácticos</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="fields">
+        <div class="four wide field">
+            <label>Estado</label>
+            <div class="ui fluid search selection dropdown" ref="status_dropdown">
+                <input type="hidden" name="record_status">
+                <i class="dropdown icon"></i>
+                <div class="default text">Todos</div>
+                <div class="menu">
+                    <div class="item" data-value="">Todos</div>
+                    <div class="item" data-value="verified">Verificada</div>
+                    <div class="item" data-value="rejected">Rechazada</div>
+                    <div class="item" data-value="pending">Sin revisión</div>
+                </div>
+            </div>
+        </div>
+        <div class="five wide field">
+            <label>Código de Acta</label>
+            <div class="ui input" ref="record_code_search">
+                <input type="text" v-model="record_code" placeholder="Buscar por correlativo de acta">
+            </div>
+        </div>
+        <div class="four wide field">
+            <label>Buscar</label>
+            <div class="ui blue fluid icon labeled button" @click="submit">
+                <i class="check icon"></i> Consultar
+            </div>
+        </div>
+    </div>
+</div>

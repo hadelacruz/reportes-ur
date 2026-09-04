@@ -1,0 +1,45 @@
+<div class="ui segment">
+    <div v-if="loading" class="ui active inverted dimmer">
+        <div class="ui large text loader">Cargando...</div>
+    </div>
+    <div class="ui four stackable statistics" style="margin-bottom: 15px">
+        <div class="ui mini statistic">
+            <div class="value">{{ totals.total }}</div>
+            <div class="label">Actas generadas</div>
+        </div>
+        <div class="ui mini green statistic">
+            <div class="value">{{ totals.verified }}</div>
+            <div class="label">Verificadas</div>
+        </div>
+        <div class="ui mini red statistic">
+            <div class="value">{{ totals.rejected }}</div>
+            <div class="label">Rechazadas</div>
+        </div>
+        <div class="ui mini yellow statistic">
+            <div class="value">{{ totals.pending }}</div>
+            <div class="label">Sin revisión</div>
+        </div>
+    </div>
+    <div class="ui top attached tabular menu">
+        <a class="item active" data-tab="first">Actas</a>
+    </div>
+    <div class="ui bottom attached tab segment active" data-tab="first" style="overflow-x: auto;">
+        <table class="ui very compact selectable celled striped table" ref="records_table" style="min-width:100%">
+            <thead class="ui inverted grey table">
+                <tr>
+                    <th>Correlativo</th>
+                    <th>Sede</th>
+                    <th>Periodo</th>
+                    <th>Tipo de Acta</th>
+                    <th>Curso</th>
+                    <th>Aula</th>
+                    <th>Carrera</th>
+                    <th>Catedrático</th>
+                    <th>Ciclo</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
