@@ -35,24 +35,35 @@ models.std_inscription.belongsTo(models.std_student, {
 });
 
 //---------------------------------
-models.std_student.hasMany(models.std_account, {
+function ensureAssociation(SourceModel, method, TargetModel, options) {
+    if (!SourceModel.associations[options.as]) {
+        SourceModel[method](TargetModel, options);
+    }
+}
+
+ensureAssociation(models.std_student, "hasMany", models.std_account, {
+    as: "std_account",
     foreignKey: "student_id",
     targetKey: "student_id"
 });
-models.std_account.belongsTo(models.acc_account, {
+ensureAssociation(models.std_account, "belongsTo", models.acc_account, {
+    as: "acc_account",
     foreignKey: "account_id"
 });
-models.acc_account.hasMany(models.std_account_movement, {
+ensureAssociation(models.acc_account, "hasMany", models.std_account_movement, {
+    as: "std_account_movements",
     foreignKey: "account_id"
 });
 
 //para tipo de movimiento
-models.std_account_movement.belongsTo(models.std_account_movement_type, {
+ensureAssociation(models.std_account_movement, "belongsTo", models.std_account_movement_type, {
+    as: "std_account_movement_type",
     foreignKey: "type_id"
 });
 
 //preinscripciones
-models.std_inscription.hasMany(models.crs_assignation_preinscription, {
+ensureAssociation(models.std_inscription, "hasMany", models.crs_assignation_preinscription, {
+    as: "crs_assignation_preinscriptions",
     foreignKey: "inscription_id"
 });
 
@@ -105,6 +116,7 @@ models.std_inscription.findAll({
         },
         {
             model: models.crs_assignation_preinscription,
+            as: "crs_assignation_preinscriptions",
             attributes: ["course_id", "inscription_id"],
             required: true
         },
@@ -119,17 +131,21 @@ models.std_inscription.findAll({
             },
             include: [{
                 model: models.std_account,
+                as: "std_account",
                 required: true,
                 include: [{
                     model: models.acc_account,
+                    as: "acc_account",
                     required: true,
                     include: [{
                         model: models.std_account_movement,
+                        as: "std_account_movements",
                         attributes: ["movement_id", "amount", "paid", "expire_date"],
                         required: true,
                         where: condMovement,
                         include: [{
                             model: models.std_account_movement_type,
+                            as: "std_account_movement_type",
                             attributes: ["name"],
                             required: true
                         }]
