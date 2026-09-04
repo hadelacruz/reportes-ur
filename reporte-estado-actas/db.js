@@ -19,26 +19,23 @@ async function getRecordsStatusData(filters) {
         enterprise_id
     } = filters;
 
-    // Sede/carrera/catedrático/curso se toman directo de crs_record: son
-    // obligatorios ahí y quedan grabados con el contexto real al momento de
-    // generar el acta. No se resuelven vía aula/sección porque esa relación
-    // puede tener datos incompletos (aulas sin branch_id) y perdería actas
-    // reales. Aula y ciclo de estudio sí dependen de la sección/aula, porque
-    // crs_record no los guarda.
-    models.crs_record.belongsTo(models.std_branch, { foreignKey: "branch_id" });
-    models.crs_record.belongsTo(models.std_career, { foreignKey: "career_id" });
-    models.crs_record.belongsTo(models.crs_course, { foreignKey: "course_id" });
-    models.crs_record.belongsTo(models.pfs_professor, { foreignKey: "professor_id" });
+    // Sede/carrera/catedrático/curso se resuelven igual que en
+    // /course/record/do-get-season-list-all (via aula/sección), para que el
+    // conteo calce con el módulo courses_records.
     models.crs_record.belongsTo(models.crs_assignation_section, { foreignKey: "section_id" });
     models.crs_assignation_section.belongsTo(models.crs_assignation_classroom, { foreignKey: "classroom_id" });
+    models.crs_assignation_classroom.belongsTo(models.std_branch, { foreignKey: "branch_id" });
     models.crs_assignation_classroom.belongsTo(models.std_studying_cycle, { foreignKey: "studying_cycle_id" });
+    models.crs_assignation_classroom.hasMany(models.crs_assignation_classroom_career, { foreignKey: "classroom_id" });
+    models.crs_assignation_classroom_career.belongsTo(models.std_career, { foreignKey: "career_id" });
+    models.crs_assignation_section.belongsTo(models.pfs_professor, { foreignKey: "professor_id" });
+    models.crs_assignation_section.belongsTo(models.crs_course, { foreignKey: "course_id" });
     models.crs_assignation_section.belongsTo(models.crs_assignation_season, { foreignKey: "season_id" });
     models.crs_assignation_season.belongsTo(models.std_period, { foreignKey: "period_id" });
 
+    // Lo único que se filtra directo sobre el acta: su propio tipo y
+    // correlativo. El estado se evalúa después, sobre la última corrección.
     const recordWhere = {};
-    if (branch_id) recordWhere.branch_id = { [models.Sequelize.Op.in]: branch_id };
-    if (career_id) recordWhere.career_id = { [models.Sequelize.Op.in]: career_id };
-    if (professor_id) recordWhere.professor_id = { [models.Sequelize.Op.in]: professor_id };
     if (record_type) recordWhere.record_type = { [models.Sequelize.Op.in]: record_type };
     if (record_code) recordWhere.record_code = record_code;
 
@@ -52,13 +49,21 @@ async function getRecordsStatusData(filters) {
             "create_date",
             "is_verified",
             "is_rejected",
-            "section_id"
+            "section_id",
+            // Estos 4 no se usan para filtrar/mostrar sede-carrera-catedrático
+            // (eso viene del aula/sección), pero SÍ hacen falta para saber
+            // qué es "la misma acta corregida" vs. "otro grupo distinto":
+            // un acta se genera una vez por cada combinación única de
+            // (sede, carrera, jornada, catedrático) entre los estudiantes de
+            // la sección (ver groupBy en record_modal/IndexNetworth.vue), y
+            // /course/record/do-print numera las correcciones filtrando
+            // exactamente por esas mismas columnas + section_id + record_type.
+            "branch_id",
+            "career_id",
+            "professor_id",
+            "studying_time_id"
         ],
         include: [
-            { model: models.std_branch, attributes: ["name"] },
-            { model: models.std_career, attributes: ["name"] },
-            { model: models.crs_course, attributes: ["name"] },
-            { model: models.pfs_professor, attributes: ["setup"] },
             {
                 model: models.crs_assignation_section,
                 attributes: ["section_id"],
@@ -67,13 +72,36 @@ async function getRecordsStatusData(filters) {
                     {
                         model: models.crs_assignation_classroom,
                         attributes: ["name"],
-                        required: !!studying_cycle_id,
-                        where: studying_cycle_id
-                            ? { studying_cycle_id: { [models.Sequelize.Op.in]: studying_cycle_id } }
-                            : undefined,
+                        where: {
+                            ...(branch_id ? { branch_id: { [models.Sequelize.Op.in]: branch_id } } : {}),
+                            ...(studying_cycle_id ? { studying_cycle_id: { [models.Sequelize.Op.in]: studying_cycle_id } } : {})
+                        },
                         include: [
-                            { model: models.std_studying_cycle, attributes: ["name"] }
+                            { model: models.std_branch, attributes: ["name"] },
+                            { model: models.std_studying_cycle, attributes: ["name"] },
+                            {
+                                model: models.crs_assignation_classroom_career,
+                                required: !!career_id,
+                                where: career_id
+                                    ? { career_id: { [models.Sequelize.Op.in]: career_id } }
+                                    : undefined,
+                                include: [
+                                    { model: models.std_career, attributes: ["career_id", "name"] }
+                                ]
+                            }
                         ]
+                    },
+                    {
+                        model: models.pfs_professor,
+                        required: !!professor_id,
+                        where: professor_id
+                            ? { professor_id: { [models.Sequelize.Op.in]: professor_id } }
+                            : undefined,
+                        attributes: ["setup"]
+                    },
+                    {
+                        model: models.crs_course,
+                        attributes: ["name"]
                     },
                     {
                         model: models.crs_assignation_season,
@@ -99,15 +127,25 @@ async function getRecordsStatusData(filters) {
     return records.map((r) => r.toJSON());
 }
 
-// Una misma acta puede tener varias correcciones (mismas filas con distinto
-// record_correction_number). La identidad de una acta es section_id +
-// record_type (mismo criterio que usa /course/record/do-print para numerar
-// las correcciones). Aquí nos quedamos solo con la última.
+// Identidad de una acta = section_id + record_type + branch_id + career_id +
+// professor_id + studying_time_id (mismo criterio que usa
+// /course/record/do-print para numerar correcciones). Ojo: esto NO es lo
+// mismo que "section_id + record_type" a secas, porque una sección puede
+// generar varias actas EN PARALELO (una por cada grupo de estudiantes con
+// distinta sede/carrera/jornada de inscripción) que no son correcciones
+// entre sí, sino actas distintas.
 function resolveLatestCorrections(rows) {
     const latestByKey = {};
 
     for (const row of rows) {
-        const key = `${row.section_id}_${row.record_type}`;
+        const key = [
+            row.section_id,
+            row.record_type,
+            row.branch_id,
+            row.career_id,
+            row.professor_id,
+            row.studying_time_id
+        ].join("_");
         const current = latestByKey[key];
 
         if (!current) {
@@ -163,12 +201,13 @@ async function getRecordsStatusReport(req, res) {
         }
 
         const result = latest.map((r) => {
-            const professorSetup = r.pfs_professor && r.pfs_professor.setup
-                ? JSON.parse(r.pfs_professor.setup)
-                : null;
             const section = r.crs_assignation_section || {};
             const season = section.crs_assignation_season || {};
             const classroom = section.crs_assignation_classroom || {};
+            const professorSetup = section.pfs_professor && section.pfs_professor.setup
+                ? JSON.parse(section.pfs_professor.setup)
+                : null;
+            const careers = classroom.crs_assignation_classroom_careers || [];
 
             return {
                 uuid: r.uuid,
@@ -178,9 +217,11 @@ async function getRecordsStatusReport(req, res) {
                 create_date: r.create_date,
                 is_verified: !!r.is_verified,
                 is_rejected: !!r.is_rejected,
-                branch: r.std_branch ? r.std_branch.name : null,
-                career: r.std_career ? r.std_career.name : null,
-                course: r.crs_course ? r.crs_course.name : null,
+                branch: classroom.std_branch ? classroom.std_branch.name : null,
+                career: careers.length
+                    ? careers.map((c) => (c.std_career ? c.std_career.name : null)).filter(Boolean).join(", ")
+                    : null,
+                course: section.crs_course ? section.crs_course.name : null,
                 classroom: classroom.name || null,
                 professor: professorSetup
                     ? `${professorSetup.name} ${professorSetup.lastname}`
