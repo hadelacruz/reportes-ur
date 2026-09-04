@@ -1,0 +1,47 @@
+<form class="ui form">
+    <div class="two fields">
+        <div class="field">
+            <label>Sede</label>
+            <div class="ui fluid multiple search selection dropdown" ref="branch_dropdown">
+                <input type="hidden" name="branch">
+                <i class="dropdown icon"></i>
+                <div class="default text">Seleccione</div>
+                <div class="menu">
+                </div>
+            </div>
+        </div>
+        <div class="field">
+            <label>Carrera</label>
+            <div class="ui fluid multiple search selection dropdown" ref="carreer_dropdown">
+                <input type="hidden" name="carreer">
+                <i class="dropdown icon"></i>
+                <div class="default text">Seleccione</div>
+                <div class="menu">
+                </div>
+            </div>
+        </div>
+        <div class="field">
+            <label>Período</label>
+            <div class="ui fluid multiple search selection dropdown" ref="period_dropdown">
+                <input type="hidden" name="period">
+                <i class="dropdown icon"></i>
+                <div class="default text">Seleccione</div>
+                <div class="menu">
+                </div>
+            </div>
+        </div>
+        <div class="field">
+            <label>Tipo de movimiento</label>
+            <div class="ui fluid multiple search selection dropdown" ref="movement_dropdown">
+                <input type="hidden" name="movement">
+                <i class="dropdown icon"></i>
+                <div class="default text">Seleccione</div>
+                <div class="menu">
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="ui blue icon labeled button" @click="submit">
+        <i class="check icon"></i> Consultar
+    </div>
+</form>
