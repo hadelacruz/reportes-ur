@@ -1,12 +1,21 @@
 {
     data: function() {
         return {
-            students: []
+            students: [],
+            loading: true
         }
     },
     mounted: function() {
         let vm = this;
-        if (vm.result) {
+        if (!vm.result) {
+            vm.loading = false;
+            window.jQuery(".ui.tabular.menu .item").tab();
+            return;
+        }
+
+        // Esperamos un tick para que Vue pinte el dimmer de "Cargando..."
+        // antes de bloquear el hilo con el armado de la tabla (DataTable).
+        vm.$nextTick(() => {
             vm.students = result;
             console.log(vm.students);
             if (window.jQuery.fn.DataTable.isDataTable(vm.$refs.student_table)) {
@@ -175,9 +184,8 @@
 
             });
 
-
-        }
-
-        window.jQuery(".ui.tabular.menu .item").tab();
+            vm.loading = false;
+            window.jQuery(".ui.tabular.menu .item").tab();
+        });
     }
 }

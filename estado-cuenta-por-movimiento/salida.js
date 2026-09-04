@@ -1,7 +1,8 @@
 {
     data: function() {
         return {
-            students: []
+            students: [],
+            loading: true
         };
     },
     methods: {
@@ -114,16 +115,24 @@
     mounted: function() {
         let vm = this;
         console.log("this", vm);
-        if (vm.result) {
+        if (!vm.result) {
+            vm.loading = false;
+            window.jQuery(".ui.tabular.menu .item").tab();
+            return;
+        }
+
+        // Esperamos un tick para que Vue pinte el dimmer de "Cargando..."
+        // antes de bloquear el hilo con el armado de la tabla (DataTable).
+        vm.$nextTick(() => {
             vm.students = vm.result;
             console.log("students", vm.students);
-            
+
             // Verificamos la estructura de los datos
             if (vm.students.length > 0) {
                 console.log("Primer estudiante:", JSON.stringify(vm.students[0], null, 2));
                 console.log("Movimientos del primer estudiante:", vm.getMovements(vm.students[0]));
             }
-            
+
             if (window.jQuery.fn.DataTable.isDataTable(vm.$refs.student_table)) {
                 window.jQuery(vm.$refs.student_table).DataTable().destroy();
             }
@@ -216,8 +225,9 @@
             setTimeout(function() {
                 tbl.draw();
             }, 100);
-        }
 
-        window.jQuery(".ui.tabular.menu .item").tab();
+            vm.loading = false;
+            window.jQuery(".ui.tabular.menu .item").tab();
+        });
     }
 }
