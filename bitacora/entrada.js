@@ -4,6 +4,7 @@
         return {
             api_url: "https://api_modul.uregional.net",
             log_type: undefined,
+            communication_type: undefined,
             studnt: undefined,
             student_uuid: undefined,
             creationdate: undefined,
@@ -167,7 +168,36 @@
         }).finally(() => {
             window.jQuery(_v.$refs.form).removeClass("loading");
         });
-        
+
+        _v.$http.post(`${_v.api_url}/student_log_communication_type/do-get-list`, {}, headers).then(rspnse => {
+            if (rspnse.status == 200) {
+                let rsp = rspnse.data;
+                if (!rsp.success) console.error(rsp.error);
+                else {
+
+                    let communication_types = rsp.data ? rsp.data.map(b => {
+                        return {
+                            value: b.type_id,
+                            name: b.name
+                        };
+                    }) : [];
+
+                    window.jQuery(_v.$refs.communication_type_dropdown).dropdown({
+                        onChange: function(value) {
+                            _v.communication_type = value;
+                        }
+                    }).dropdown("setup menu", {
+                        values: communication_types
+                    });
+
+                }
+            } else {
+                console.error(rspnse);
+            }
+        }).catch(err => {
+            console.error(err);
+        });
+
         window.jQuery(this.$refs.creationdate).calendar({
             type: 'date',
             today: true,

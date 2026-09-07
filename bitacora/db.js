@@ -42,6 +42,20 @@ let branch
 // if (req.body.d.branch) condition.branch_id = req.body.d.branch.split(",");
 if (req.body.d.user) condition.create_user_id = req.body.d.user.split(",");
 
+// El tipo de comunicación viene dentro del JSON almacenado en la columna "setup"
+if (req.body.d.communication_type) {
+    condition[models.Sequelize.Op.and] = [
+        ...(condition[models.Sequelize.Op.and] || []),
+        models.Sequelize.where(
+            models.Sequelize.fn(
+                "JSON_UNQUOTE",
+                models.Sequelize.fn("JSON_EXTRACT", models.Sequelize.col("std_log.setup"), "$.communication_type")
+            ),
+            { [models.Sequelize.Op.in]: req.body.d.communication_type.split(",") }
+        )
+    ];
+}
+
 
 models.std_log.belongsTo(models.std_log_type, {
     foreignKey: "type_id",
@@ -76,7 +90,30 @@ models.std_log.findAll({
         }
     ]
 }).then(logs => {
-    resolve(logs);
+    // El tipo de comunicación no tiene llave foránea en std_log (viene dentro
+    // del JSON "setup"), así que resolvemos el nombre aparte y lo anexamos.
+    return models.std_log_communication_type.findAll().then(communicationTypes => {
+        let communicationTypeMap = {};
+        communicationTypes.forEach(ct => {
+            communicationTypeMap[ct.type_id] = ct.name;
+        });
+
+        let result = logs.map(log => {
+            let plainLog = log.get({ plain: true });
+            let setup = {};
+            try {
+                setup = plainLog.setup ? JSON.parse(plainLog.setup) : {};
+            } catch (e) {
+                setup = {};
+            }
+            plainLog.communication_type_name = setup.communication_type ?
+                (communicationTypeMap[setup.communication_type] || "Tipo de comunicación no encontrado") :
+                "No tiene tipo de comunicación";
+            return plainLog;
+        });
+
+        resolve(result);
+    });
 }).catch(err => {
     reject(err);
 });

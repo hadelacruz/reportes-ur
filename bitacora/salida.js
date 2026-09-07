@@ -41,6 +41,11 @@
                         return row.std_log_type.name;
                     },
                 }, {
+                    //tipo de comunicación
+                    data: function(row) {
+                        return row.communication_type_name;
+                    },
+                }, {
                     //comentario
                     data: function(row) {
                         let setup = JSON.parse(row.setup)
