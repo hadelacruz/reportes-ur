@@ -59,7 +59,7 @@
 		// sección como entero); se traduce con este mapa solo para que la pestaña
 		// de detalle sea legible, nunca se usa para decidir si dos secciones son
 		// la misma clase (para eso ya alcanza con el texto de "schedule").
-		const dayNames = { "0": "Domingo", "1": "Lunes", "2": "Martes", "3": "Miércoles", "4": "Jueves", "5": "Viernes", "6": "Sábado", "7": "Domingo" };
+		const dayNames = { "0": "Lunes", "1": "Martes", "2": "Miércoles", "3": "Jueves", "4": "Viernes", "5": "Sábado", "6": "Domingo" };
 
 		// Regla de negocio: dos (o más) secciones del MISMO catedrático cuentan como
 		// UN solo curso asignado cuando comparten sede, periodo, curso y horario
