@@ -1,0 +1,47 @@
+<div class="ui segment">
+	<div v-if="loading" class="ui active inverted dimmer">
+		<div class="ui large text loader">Cargando datos, por favor espere...</div>
+	</div>
+	<div class="ui top attached tabular menu">
+		<a class="item active" data-tab="first">Carga académica por catedrático</a>
+		<a class="item" data-tab="second">Detalle de cursos unificados</a>
+	</div>
+	<div class="ui bottom attached tab segment active" data-tab="first" style="overflow-x: auto;">
+		<div class="ui small info message">
+			<div class="header">Cómo se calcula</div>
+			<p>Se cuenta como <b>un solo curso</b> cuando el mismo catedrático repite curso, sede, periodo y horario (día y franja horaria) en varias secciones o aulas: son secciones "hermanas" de una misma clase. Si cambia el horario (aunque el curso se repita), se cuenta como un curso adicional.</p>
+			<p>Revise la pestaña <b>Detalle de cursos unificados</b> para ver qué secciones y aulas se agruparon en cada curso contado.</p>
+		</div>
+		<table class="ui very compact selectable celled striped table" ref="summary_table" style="min-width:100%">
+			<thead class="ui inverted grey table">
+				<tr>
+					<th>NIT</th>
+					<th>Nombre de catedrático</th>
+					<th>Sedes</th>
+					<th>Cantidad de cursos asignados</th>
+					<th>Periodo</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	</div>
+	<div class="ui bottom attached tab segment" data-tab="second" style="overflow-x: auto;">
+		<table class="ui very compact selectable celled striped table" ref="detail_table" style="min-width:100%">
+			<thead class="ui inverted grey table">
+				<tr>
+					<th>Sede</th>
+					<th>NIT</th>
+					<th>Nombre de catedrático</th>
+					<th>Curso</th>
+					<th>Día</th>
+					<th>Horario</th>
+					<th>Aulas</th>
+					<th>Códigos de Sección</th>
+					<th>Aulas unificadas</th>
+					<th>Periodo</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	</div>
+</div>
