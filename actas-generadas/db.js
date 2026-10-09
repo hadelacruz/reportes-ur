@@ -291,85 +291,96 @@ models.crs_record.findAll({
     });
   }
 
-  // Paso 1: Agrupar por sección + tipo + sede, tomar solo la acta más reciente de cada sede
-  var sectionTypeSiteMap = {};
+  // Regla de negocio: Intercarreras (alumnos de distintas carreras en un aula) e Intersedes
+  // (alumnos de distintas sedes en un aula) generan una acta por carrera/sede, pero
+  // para el negocio es UNA sola acta por sección + tipo.
+
+  // Paso 1: Por sección + tipo + sede + carrera, quedarse con la versión más reciente (correcciones)
+  var latestByOrigin = {};
   jsonRecords.forEach(function(record) {
     var normalizedTypeForDedup = normalizeRecordType(record.record_type);
     var dedupTypeKey = normalizedTypeForDedup || String(record.record_type || "").trim();
     var branchId = record.std_branch ? record.std_branch.branch_id : record.branch_id;
-    var sectionTypeSiteKey = record.section_id + "|" + dedupTypeKey + "|" + branchId;
+    var careerId = record.std_career ? record.std_career.career_id : record.career_id;
+    var originKey = record.section_id + "|" + dedupTypeKey + "|" + branchId + "|" + careerId;
+
+    var existing = latestByOrigin[originKey];
+    if (!existing) {
+      latestByOrigin[originKey] = record;
+      return;
+    }
+
     var currentRank = Number(record.record_correction_number || 0);
     var currentDate = record.create_date ? new Date(record.create_date).getTime() : 0;
+    var existingRank = Number(existing.record_correction_number || 0);
+    var existingDate = existing.create_date ? new Date(existing.create_date).getTime() : 0;
 
-    if (!sectionTypeSiteMap[sectionTypeSiteKey]) {
-      sectionTypeSiteMap[sectionTypeSiteKey] = record;
-    } else {
-      var existing = sectionTypeSiteMap[sectionTypeSiteKey];
-      var existingRank = Number(existing.record_correction_number || 0);
-      var existingDate = existing.create_date ? new Date(existing.create_date).getTime() : 0;
-
-      if (
-        currentRank > existingRank ||
-        (currentRank === existingRank && currentDate > existingDate) ||
-        (currentRank === existingRank && currentDate === existingDate && record.record_id > existing.record_id)
-      ) {
-        sectionTypeSiteMap[sectionTypeSiteKey] = record;
-      }
+    if (
+      currentRank > existingRank ||
+      (currentRank === existingRank && currentDate > existingDate) ||
+      (currentRank === existingRank && currentDate === existingDate && record.record_id > existing.record_id)
+    ) {
+      latestByOrigin[originKey] = record;
     }
   });
 
-  // Paso 2: Tomar las actas más recientes de cada sede y agrupar por sección + tipo para combinar
-  var bestRecordsByBranch = Object.keys(sectionTypeSiteMap).map(function(key) {
-    return sectionTypeSiteMap[key];
-  });
-
+  // Paso 2: Agrupar por sección + tipo y sumar alumnos (válidos y total) de todas las carreras/sedes
   var groupMap = {};
-  bestRecordsByBranch.forEach(function(record) {
+  Object.keys(latestByOrigin).forEach(function(originKey) {
+    var record = latestByOrigin[originKey];
     var normalizedTypeForDedup = normalizeRecordType(record.record_type);
     var dedupTypeKey = normalizedTypeForDedup || String(record.record_type || "").trim();
     var groupKey = record.section_id + "|" + dedupTypeKey;
 
-    if (!groupMap[groupKey]) {
-      groupMap[groupKey] = {
+    var detail = parseJson(record.detail, []);
+    var students = Array.isArray(detail) ? detail : [];
+    var stages = parseJson(record.stages, []);
+    var validos = 0;
+    students.forEach(function(studentEntry) {
+      if (isValidStudentForActa(studentEntry, record.record_type, stages)) validos++;
+    });
+
+    var group = groupMap[groupKey];
+    if (!group) {
+      group = groupMap[groupKey] = {
         masterRecord: record,
-        combinedDetail: parseJson(record.detail, [])
+        careers: [],
+        branches: [],
+        totalAlumnos: 0,
+        totalValidos: 0
       };
     } else {
-      var currentDetail = parseJson(record.detail, []);
-      if (Array.isArray(currentDetail)) {
-        groupMap[groupKey].combinedDetail = groupMap[groupKey].combinedDetail.concat(currentDetail);
+      // El acta más reciente del grupo es la de referencia (fecha, docente, etc.)
+      var masterDate = group.masterRecord.create_date ? new Date(group.masterRecord.create_date).getTime() : 0;
+      var recDate = record.create_date ? new Date(record.create_date).getTime() : 0;
+      if (recDate > masterDate || (recDate === masterDate && record.record_id > group.masterRecord.record_id)) {
+        group.masterRecord = record;
       }
     }
-  });
 
-  // Paso 3: Crear array de actas combinadas
-  var dedupRecords = Object.keys(groupMap).map(function(key) {
-    var group = groupMap[key];
-    var combinedRecord = Object.assign({}, group.masterRecord);
-    combinedRecord.detail = JSON.stringify(group.combinedDetail);
-    return combinedRecord;
+    var careerName = record.std_career ? record.std_career.name : null;
+    if (careerName && group.careers.indexOf(careerName) === -1) group.careers.push(careerName);
+    var branchName = record.std_branch ? record.std_branch.name : null;
+    if (branchName && group.branches.indexOf(branchName) === -1) group.branches.push(branchName);
+
+    group.totalAlumnos += students.length;
+    group.totalValidos += validos;
   });
 
   var rows = [];
 
-  dedupRecords.forEach(function(record) {
+  Object.keys(groupMap).forEach(function(groupKey) {
+    var group = groupMap[groupKey];
+    var record = group.masterRecord;
     var normalizedType = normalizeRecordType(record.record_type);
     if (normalizedTypeFilters.length > 0 && normalizedTypeFilters.indexOf(normalizedType) === -1) {
       return;
     }
 
-    var detail = parseJson(record.detail, []);
-    var stages = parseJson(record.stages, []);
-    var students = Array.isArray(detail) ? detail : [];
-    var totalAlumnos = students.length;
-    var totalAlumnosValidos = 0;
+    var totalAlumnos = group.totalAlumnos;
+    var totalAlumnosValidos = group.totalValidos;
 
-    students.forEach(function(studentEntry) {
-      if (isValidStudentForActa(studentEntry, record.record_type, stages)) {
-        totalAlumnosValidos++;
-      }
-    });
-
+    // El pago se decide sobre el acta agrupada, no por carrera/sede
     var se_paga = totalAlumnosValidos > 0 ? "Sí" : "No";
 
     var section = record.crs_assignation_section || {};
@@ -396,7 +407,7 @@ models.crs_record.findAll({
     var recordBranch = record.std_branch || {};
     var sede = classroomBranch.name || sectionBranch.name || recordBranch.name || "N/A";
     var sede_branch_id = classroom.branch_id || section.branch_id || record.branch_id || null;
-    var carreraName = career.name || "N/A";
+    var carreraName = group.careers.length > 0 ? group.careers.sort().join(" / ") : (career.name || "N/A");
     var ciclo = section.std_studying_cycle ? section.std_studying_cycle.name : "N/A";
     var jornada = studyingTime.name || "N/A";
     var curso = course.name || "N/A";
