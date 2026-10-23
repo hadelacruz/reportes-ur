@@ -1,0 +1,35 @@
+<div class="ui segment" style="overflow-x: auto;">
+	<div v-if="loading" class="ui active inverted dimmer">
+		<div class="ui large text loader">Cargando datos, por favor espere...</div>
+	</div>
+	<div class="ui small info message">
+		<div class="header">Cómo se calcula el vencimiento</div>
+		<p v-if="result.expiration_days">Un ticket está <b>vencido</b> cuando han pasado <b>{{ result.expiration_days }}</b> días o más desde su fecha de creación original y no está Finalizado. Transferir o actualizar el ticket no reinicia el conteo.</p>
+		<p v-else>El vencimiento está <b>desactivado</b> para esta empresa: ningún ticket se marca como vencido.</p>
+	</div>
+	<table class="ui very compact selectable celled striped table" ref="detail_table" style="min-width:100%">
+		<thead class="ui inverted grey table">
+			<tr>
+				<th>Fecha de creación</th>
+				<th>Descripción</th>
+				<th>Etiqueta</th>
+				<th>Estado</th>
+				<th>Vencido</th>
+				<th>Días de antigüedad</th>
+				<th>Área</th>
+				<th>Sede</th>
+				<th>Asignado a</th>
+				<th>Área de origen</th>
+				<th>Sede de origen</th>
+				<th>Creado por</th>
+				<th>Carné</th>
+				<th>Estudiante</th>
+				<th>Comentario de finalización</th>
+				<th>Comentario de devolución</th>
+				<th>Última transferencia por</th>
+				<th>Fecha de última transferencia</th>
+			</tr>
+		</thead>
+		<tbody></tbody>
+	</table>
+</div>
