@@ -23,6 +23,7 @@
 			user: undefined,
 			create_user: undefined,
 			tag: undefined,
+			ticket_id: "",
 			expiration: ""
 		}
 	},
@@ -154,13 +155,29 @@
 			})).then(lists => [].concat.apply([], lists));
 		}
 
+		// Etiquetas: el endpoint puede devolver solo las globales o las del área
+		// pedida, así que se consulta sin filtro y una vez por área, y se juntan
+		// sin repetir (no importa de qué área sea ni si no tiene área).
+		function loadTags(areaItems) {
+			const requests = [loadCatalog(_v.ticket_endpoints.tags)].concat(areaItems.filter(area => area.role_id != null).map(area => {
+				return loadCatalog(_v.ticket_endpoints.tags, { role_id: area.role_id, area_id: area.area_id });
+			}));
+			return Promise.all(requests).then(lists => {
+				const seen = {};
+				return [].concat.apply([], lists).filter(item => {
+					if (item.tag_id == null || seen[item.tag_id]) return false;
+					seen[item.tag_id] = true;
+					return true;
+				});
+			});
+		}
+
 		Promise.all([
 			_v.$http.post(`${_v.api_url}/student_configuration/do-get-configuration`, {}, headers),
 			loadCatalog(_v.ticket_endpoints.areas),
-			loadCatalog(_v.ticket_endpoints.statuses),
-			loadCatalog(_v.ticket_endpoints.tags)
+			loadCatalog(_v.ticket_endpoints.statuses)
 		]).then(responses => {
-			return loadMembers(responses[1]).then(members => responses.concat([members]));
+			return Promise.all([loadMembers(responses[1]), loadTags(responses[1])]).then(extra => responses.concat(extra));
 		}).then(responses => {
 			const configResponse = responses[0];
 			// Áreas repetidas (una por sede) se reducen a una por role_id.
@@ -171,8 +188,9 @@
 				return true;
 			}).map(item => ({ value: item.role_id, name: item.name }));
 			const statuses = responses[2].map(item => ({ value: item.status_id, name: item.name }));
-			const tags = responses[3].map(item => ({ value: item.tag_id, name: item.name }));
-			_v.area_users = responses[4];
+			const tags = responses[4].map(item => ({ value: item.tag_id, name: item.name }))
+				.sort((a, b) => String(a.name).localeCompare(String(b.name), "es"));
+			_v.area_users = responses[3];
 
 			let branches = [];
 			if (configResponse.status === 200 && configResponse.data.success) {

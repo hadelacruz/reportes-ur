@@ -92,7 +92,7 @@
 		</div>
 	</div>
 	<div class="fields">
-		<div class="six wide field">
+		<div class="four wide field">
 			<label>Creado por</label>
 			<div class="ui fluid multiple search selection dropdown" ref="create_user_dropdown">
 				<input type="hidden" name="create_user">
@@ -101,13 +101,19 @@
 				<div class="menu"></div>
 			</div>
 		</div>
-		<div class="six wide field">
+		<div class="four wide field">
 			<label>Etiqueta</label>
 			<div class="ui fluid multiple search selection dropdown" ref="tag_dropdown">
 				<input type="hidden" name="tag">
 				<i class="dropdown icon"></i>
 				<div class="default text">Seleccione</div>
 				<div class="menu"></div>
+			</div>
+		</div>
+		<div class="four wide field">
+			<label>No. de ticket</label>
+			<div class="ui input">
+				<input type="text" v-model="ticket_id" placeholder="Ej: 125 o 125, 130">
 			</div>
 		</div>
 		<div class="four wide field">

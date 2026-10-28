@@ -66,6 +66,13 @@
 		const tagFilter = splitIn(d.tag);
 		if (tagFilter) where.tag_id = { [Op.in]: tagFilter };
 
+		// No. de ticket: acepta uno o varios números separados por coma o espacio.
+		// Si se escribió algo sin ningún número válido, no debe devolver todo.
+		if (d.ticket_id != null && String(d.ticket_id).trim() !== "") {
+			const ticketIds = String(d.ticket_id).split(/[\s,;]+/).filter(function(x) { return /^\d+$/.test(x); });
+			where.ticket_id = { [Op.in]: ticketIds };
+		}
+
 		const createUserFilter = splitIn(d.create_user);
 		if (createUserFilter) where.create_user_id = { [Op.in]: createUserFilter };
 
@@ -89,7 +96,7 @@
 			include: [
 				{ model: models.std_student, attributes: ["student_id", "student_id_card", "name"], required: false }
 			],
-			order: [["create_date", "DESC"]]
+			order: [["ticket_id", "ASC"]]
 		});
 
 		// Catálogos y usuarios se resuelven aparte (sin FK en el modelo) para no
@@ -157,9 +164,11 @@
 			const createBranchLabel = t.create_branch_id ? (branchName.get(String(t.create_branch_id)) || "") : "";
 
 			return {
+				"No. Ticket": t.ticket_id,
 				"Fecha de creación": fmt(t.create_date),
 				Descripción: t.description || "",
 				Etiqueta: t.tag_id ? (tagName.get(String(t.tag_id)) || "") : "",
+				"Última actualización": fmt(t.update_date),
 				Estado: status ? status.name : "Sin estado",
 				Vencido: expired ? "Sí" : "No",
 				"Días de antigüedad": ageDays,

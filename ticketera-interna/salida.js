@@ -86,9 +86,13 @@
 			};
 
 			vm.buildDataTable(vm.$refs.detail_table, detail, [
+				// DataTables interpreta el punto de "No. Ticket" como ruta anidada
+				// (row.No.Ticket); con función se lee la propiedad tal cual.
+				{ title: "No. Ticket", data: function(row) { return row["No. Ticket"]; }, defaultContent: "" },
 				{ title: "Fecha de creación", data: "Fecha de creación", defaultContent: "" },
 				{ title: "Descripción", data: "Descripción", defaultContent: "" },
 				{ title: "Etiqueta", data: "Etiqueta", defaultContent: "" },
+				{ title: "Última actualización", data: "Última actualización", defaultContent: "" },
 				{ title: "Estado", data: "Estado", defaultContent: "" },
 				{ title: "Vencido", data: "Vencido", defaultContent: "", render: expiredRender },
 				{ title: "Días de antigüedad", data: "Días de antigüedad", defaultContent: 0 },
@@ -107,8 +111,8 @@
 			], {
 				// 18 columnas no caben en un PDF legible.
 				buttons: ["copy", "csv", "excel", "print"],
-				// Más recientes primero (la fecha tiene formato ordenable AAAA-MM-DD).
-				order: [[0, "desc"]],
+				// Por defecto ascendente según el No. de ticket (ticket_id).
+				order: [[0, "asc"]],
 				createdRow: function(row, rowData) {
 					if (rowData.Vencido === "Sí") window.jQuery(row).addClass("negative");
 				}
