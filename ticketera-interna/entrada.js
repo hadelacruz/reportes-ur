@@ -2,11 +2,11 @@
 	data: function() {
 		return {
 			api_url: "https://api_modul.uregional.net",
-			// Endpoints de la ticketera. do-get-areas es el catálogo completo
-			// (config); do-get-all-areas y do-get-my-areas están filtrados por
-			// permisos del usuario y no sirven para un reporte global.
+			// Endpoints de la ticketera. do-get-all-areas es el que ya está abierto
+			// para este reporte; de ahí sale la lista de role_id con la que luego se
+			// piden etiquetas y miembros por área (esos solo piden role_id).
 			ticket_endpoints: {
-				areas: "/internal-ticket/do-get-areas",
+				areas: "/internal-ticket/do-get-all-areas",
 				statuses: "/internal-ticket/do-get-status-types",
 				tags: "/internal-ticket/do-get-tags",
 				members: "/internal-ticket/do-get-area-members"
@@ -145,7 +145,7 @@
 		function loadMembers(areaItems) {
 			return Promise.all(areaItems.map(area => {
 				if (area.role_id == null) return [];
-				return loadCatalog(_v.ticket_endpoints.members, { role_id: area.role_id, area_id: area.area_id }).then(items => {
+				return loadCatalog(_v.ticket_endpoints.members, { role_id: area.role_id }).then(items => {
 					return items.map(item => ({
 						user_id: item.user_id,
 						name: item.name || item.username || (item.usr_user && item.usr_user.name) || ("Usuario " + item.user_id),
@@ -160,7 +160,7 @@
 		// sin repetir (no importa de qué área sea ni si no tiene área).
 		function loadTags(areaItems) {
 			const requests = [loadCatalog(_v.ticket_endpoints.tags)].concat(areaItems.filter(area => area.role_id != null).map(area => {
-				return loadCatalog(_v.ticket_endpoints.tags, { role_id: area.role_id, area_id: area.area_id });
+				return loadCatalog(_v.ticket_endpoints.tags, { role_id: area.role_id });
 			}));
 			return Promise.all(requests).then(lists => {
 				const seen = {};
