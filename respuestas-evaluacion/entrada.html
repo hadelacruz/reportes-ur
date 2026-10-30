@@ -1,0 +1,46 @@
+<div class="ui form" ref="form">
+    
+     
+    <div class="fields">
+        <div class="eight wide field">
+            <label>Periodo</label>
+            <div class="ui fluid search selection dropdown" ref="period_dropdown">
+                <input type="hidden" name="studying_time">
+                <i class="dropdown icon"></i>
+                <div class="default text">Seleccione</div>
+                <div class="menu"></div>
+            </div>
+        </div>
+           <div class="eight wide field">
+                    <label>Tipo de evaluacion</label>
+                    <select class="ui dropdown fluid" v-model="type" ref="tType_dropdown">
+                      
+                      <option value="student_coordinator">
+                        Estudiantes a coordinadores
+                      </option>
+                      <option value="coordinator_professors">
+                       Coordinadores a Profesores
+                      </option>
+                      <option value="self_professor">
+                        Auto-evaluacion de profesores
+                      </option>
+                      <option value="self_coordinator">
+                        Auto-evaluacion de coordindadores
+                      </option>
+                      <option value="assignation_professor">
+                        Estudiantes a profesores
+                      </option>
+                    </select>
+                  
+                </div>
+    </div>
+    <div class="fields">
+        <div class="eleven wide field"></div>
+        <div class="five wide field">
+            <label>Buscar</label>
+            <div class="ui blue fluid icon labeled button" @click="submit">
+                <i class="check icon"></i> Consultar
+            </div>
+        </div>
+    </div>
+</div>
